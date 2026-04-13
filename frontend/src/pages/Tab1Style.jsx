@@ -217,7 +217,32 @@ export default function Tab1Style() {
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', ...FONT }}>
 
-      {/* ── Section 1: Date ── */}
+      {/* ── Section 0: Name ── */}
+      <Section delay={0} sectionId="user-name">
+        <SectionTitle> Hey! What's your name? <span style={{color: '#E01A22'}}>*</span></SectionTitle>
+        <input
+          type="text"
+          value={wedding.user_name || ''}
+          onChange={(e) => update('user_name', e.target.value)}
+          placeholder="Enter your name..."
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '1.5px solid #EBEBEB',
+            borderRadius: 12,
+            fontSize: 16,
+            color: '#111',
+            background: '#fff',
+            outline: 'none',
+            ...FONT,
+            fontWeight: 600,
+            transition: 'border-color 0.2s',
+          }}
+          onFocus={(e) => e.target.style.borderColor = '#C9A84C'}
+          onBlur={(e) => e.target.style.borderColor = '#EBEBEB'}
+        />
+      </Section>
+
       <Section delay={0} sectionId="wedding-date">
         <SectionTitle> Wedding Date <span style={{color: '#E01A22'}}>*</span></SectionTitle>
         <input

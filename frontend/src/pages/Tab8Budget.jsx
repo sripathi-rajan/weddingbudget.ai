@@ -399,6 +399,7 @@ export default function Tab8Budget() {
     
     // Check if essential selections are made
     const errors = [];
+    if (!wedding.user_name) errors.push("Your Name");
     if (!wedding.wedding_type) errors.push("Wedding Type");
     if (!wedding.wedding_date) errors.push("Wedding Date");
     if (!wedding.total_guests || wedding.total_guests < 1) errors.push("Guest Count");

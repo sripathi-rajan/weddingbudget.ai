@@ -116,3 +116,15 @@ class RLTrainingLog(Base):
     new_multiplier = Column(Float, nullable=False)
     accuracy_delta = Column(Float, nullable=False)
     timestamp      = Column(DateTime(timezone=True), nullable=False, default=_now)
+
+
+class FinalizedBudget(Base):
+    __tablename__ = "finalized_budgets"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    user_name       = Column(String(255), nullable=True)
+    total_mid       = Column(Float, nullable=False)
+    wedding_profile = Column(Text, nullable=False)  # JSON string
+    created_at      = Column(DateTime(timezone=True), nullable=False, default=_now)
+
+

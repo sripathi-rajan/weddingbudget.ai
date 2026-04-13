@@ -236,6 +236,107 @@ function LoginPage({ onLogin, onBack }) {
   )
 }
 
+// ── Tab: Finalized Budgets ────────────────────────────────────────────────────
+function FinalizedBudgetsTab() {
+  const [budgets, setBudgets] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [selected, setSelected] = useState(null)
+  const [toast, showToast] = useToast()
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await apiFetchBudget('/budget/finalized')
+      setBudgets(Array.isArray(data) ? data : [])
+    } catch (e) {
+      showToast(e.message, false)
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
+
+  useEffect(() => { load() }, [load])
+
+  return (
+    <Card>
+      {toast && <Toast {...toast} />}
+      <SectionTitle> Finalized Wedding Budgets</SectionTitle>
+      
+      {loading ? (
+        <div style={{ color: '#888', fontSize: 13 }}>Loading...</div>
+      ) : budgets.length === 0 ? (
+        <div style={{ color: '#888', fontSize: 13 }}>No finalized budgets submitted yet.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#f0f7fc' }}>
+                {['User Name', 'Date Submitted', 'Total (Mid)', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: C.navy, borderBottom: `2px solid ${C.amber}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {budgets.map((b, i) => (
+                <tr key={b.id} style={{ background: i % 2 === 0 ? 'white' : '#f9fbfd' }}>
+                  <td style={{ padding: '10px', fontWeight: 600, color: C.navy }}>{b.user_name}</td>
+                  <td style={{ padding: '10px' }}>{new Date(b.created_at).toLocaleString('en-IN')}</td>
+                  <td style={{ padding: '10px', fontWeight: 700, color: C.green }}>{formatRupees(b.total_mid)}</td>
+                  <td style={{ padding: '10px' }}>
+                    <Btn small onClick={() => setSelected(b)} color={C.blue}>View Profile</Btn>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {selected && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(2, 48, 71, 0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: 20
+        }} onClick={() => setSelected(null)}>
+          <div style={{
+            background: 'white', borderRadius: 20, width: '100%', maxWidth: 600,
+            maxHeight: '90vh', overflowY: 'auto', padding: 32, boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: C.navy }}>Wedding Profile: {selected.user_name}</div>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888' }}>×</button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, fontSize: 14 }}>
+              <div><strong>Wedding Type:</strong> {selected.wedding_profile.wedding_type}</div>
+              <div><strong>Date:</strong> {selected.wedding_profile.wedding_date}</div>
+              <div><strong>Guests:</strong> {selected.wedding_profile.total_guests}</div>
+              <div><strong>Budget Tier:</strong> {selected.wedding_profile.budget_tier}</div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <strong>Events:</strong> {selected.wedding_profile.events?.join(', ')}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24 }}>
+              <div style={{ fontWeight: 700, marginBottom: 10, borderBottom: '1px solid #eee', paddingBottom: 6 }}>Full Raw Profile (JSON)</div>
+              <pre style={{
+                background: '#f8f9fa', padding: 12, borderRadius: 10, fontSize: 11,
+                overflowX: 'auto', maxHeight: 300, color: '#444'
+              }}>
+                {JSON.stringify(selected.wedding_profile, null, 2)}
+              </pre>
+            </div>
+
+            <div style={{ marginTop: 24, textAlign: 'right' }}>
+              <Btn onClick={() => setSelected(null)} color={C.navy}>Close</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── Tab: Artists ───────────────────────────────────────────────────────────────
 function ArtistsTab() {
   const [artists, setArtists] = useState([])
@@ -985,6 +1086,7 @@ function SettingsTab({ onLogout }) {
 
 // ── Main AdminPage ─────────────────────────────────────────────────────────────
 const TABS = [
+  { id: 'finalized', label: ' Finalized Budgets' },
   { id: 'artists', label: ' Artists' },
   { id: 'fb', label: ' F&B Rates' },
   { id: 'logistics', label: ' Logistics' },
@@ -1046,6 +1148,7 @@ export default function AdminPage({ onClose }) {
 
       {/* Content */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
+        {activeTab === 'finalized' && <FinalizedBudgetsTab />}
         {activeTab === 'artists' && <ArtistsTab />}
         {activeTab === 'fb' && <FBRatesTab />}
         {activeTab === 'logistics' && <LogisticsTab />}

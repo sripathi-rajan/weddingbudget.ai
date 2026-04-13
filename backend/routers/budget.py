@@ -10,6 +10,8 @@ from database import get_db
 from ml.rl_agent import get_rl_agent, BUDGET_CATEGORIES
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+import json
+from models import FinalizedBudget
 
 router = APIRouter()
 
@@ -225,8 +227,43 @@ def get_rl_multipliers(db: Session = Depends(get_db)):
 
 
 @router.post("/finalise")
-async def finalise_budget():
-    return {"success": True}
+async def finalise_budget(request: Request, db: Session = Depends(get_db)):
+    try:
+        body = await request.json()
+        total_data = body.get("total", {})
+        total_mid = total_data.get("mid", 0)
+        profile = body.get("wedding_profile", {})
+        user_name = profile.get("user_name", "Anonymous")
+        
+        # Save to database
+        new_entry = FinalizedBudget(
+            user_name=user_name,
+            total_mid=float(total_mid),
+            wedding_profile=json.dumps(profile)
+        )
+        db.add(new_entry)
+        db.commit()
+        return {"success": True, "id": new_entry.id}
+    except Exception as e:
+        print(f"Finalize error: {e}")
+        return {"success": False, "error": str(e)}
+
+@router.get("/finalized")
+async def get_finalized_budgets(db: Session = Depends(get_db)):
+    try:
+        results = db.query(FinalizedBudget).order_by(FinalizedBudget.created_at.desc()).all()
+        return [
+            {
+                "id": r.id,
+                "user_name": r.user_name,
+                "total_mid": r.total_mid,
+                "created_at": r.created_at.isoformat(),
+                "wedding_profile": json.loads(r.wedding_profile)
+            }
+            for r in results
+        ]
+    except Exception as e:
+        return {"error": str(e)}
 
 @router.post("/export-pdf")
 async def export_pdf(request: Request):

@@ -295,6 +295,7 @@ export const DISH_PRICES = {
 
 export const initialWeddingState = {
   // Tab 1
+  user_name: '',
   wedding_date: '',
   is_weekend: false,
   wedding_type: '',
