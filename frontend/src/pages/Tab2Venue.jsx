@@ -135,154 +135,113 @@ export default function Tab2Venue() {
         )}
       </div>
 
-      {/* Venue Selection Picker */}
-      {wedding.wedding_district && wedding.venue_type !== 'Home Intimate' && (
-        <div className="section-card" data-section="mandapam-picker">
-          {/* 1. Header Logic */}
+      {/* Venue Selection & Catalog */}
+      {wedding.wedding_district && wedding.venue_type && wedding.venue_type !== 'Home Intimate' && (
+        <div className="section-card" data-section="venue-details-picker">
+          {/* 1. Purpose-Driven Title */}
           <div className="section-title"> 
             {
               (wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') 
                 ? `Select ${wedding.venue_type === 'Banquet Hall' ? 'Mandapam / Hall' : 'Hotel Venue'}`
-                : 'Venue Details'
+                : `${wedding.venue_type} Details`
             } <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span>
           </div>
 
-          {/* 2. Catalog Logic (Halls / Hotels only) */}
-          {(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') && (
-            <>
+          {/* 2. Catalog: Only shown for Hall/Hotel types */}
+          {(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') ? (
+            <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, color: '#4a7a94', marginBottom: 16 }}>
-                Popular choices in {wedding.wedding_district}. Prices are market estimates — verify directly with venue.
+                Popular venues in {wedding.wedding_district}. Verify prices directly with the management.
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 16 }}>
-                {mandapams.map(v => (
-                  <MandapamCard key={v.id} venue={v}
-                    isSelected={wedding.mandapam_id === v.id}
-                    hasAnySelected={!!wedding.mandapam_id && wedding.mandapam_id !== v.id}
+                {mandapams.map(vObj => (
+                  <MandapamCard key={vObj.id} venue={vObj}
+                    isSelected={wedding.mandapam_id === vObj.id}
+                    hasAnySelected={!!wedding.mandapam_id && wedding.mandapam_id !== vObj.id}
                     onSelect={handleMandapamSelect} />
                 ))}
               </div>
-            </>
+              
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 13, color: C.blue, fontWeight: 600, textDecoration: 'none', borderBottom: `1px dashed ${C.blue}` }}>
+                  🔍 Search more on Google Maps
+                </a>
+                <button onClick={() => setShowCustomForm(!showCustomForm)}
+                   style={{ fontSize: 13, color: '#7a5900', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}>
+                   {showCustomForm ? '✕ Hide Custom Entry' : '+ My venue isn\'t listed'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: '#4a7a94', marginBottom: 16 }}>
+              Enter the details for your chosen {wedding.venue_type.toLowerCase()} below. Use Google Maps to find local spots if needed.
+            </div>
           )}
 
-          {/* 3. Custom Form / Manual Entry (Always show for unique venues, or as toggle for halls) */}
+          {/* 3. Input Form: Always visible for Unique types, or on-demand for Halls */}
           {((wedding.venue_type !== 'Banquet Hall' && wedding.venue_type !== 'Hotel 3-5 Star') || showCustomForm) && (
             <div style={{
-              marginTop: 14, padding: '16px 18px', background: '#fffbea',
-              borderRadius: 12, border: `1.5px solid ${C.amber}`, marginBottom: 16
+              padding: '20px', background: '#fffbea', borderRadius: 14, border: `1.5px solid ${C.amber}`,
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20
             }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.primary, marginBottom: 12 }}>
-                {
-                   (wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star')
-                    ? 'Custom Venue Entry'
-                    : `${wedding.venue_type} Details`
-                }
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-                <div>
-                  <label className="form-label">Venue Name</label>
-                  <input className="form-input" placeholder="e.g. Blue Lagoon Beach Resort"
-                    value={customVenue.name || (wedding.mandapam_id?.startsWith('custom_') ? wedding.mandapam_name : '')}
-                    onChange={e => {
-                      const name = e.target.value;
-                      setCustomVenue(v => ({ ...v, name }));
-                      if (!isTraditionalType) update('mandapam_name', name);
-                    }} />
-                </div>
-                <div>
-                  <label className="form-label">Area / Location</label>
-                  <input className="form-input" placeholder="e.g. ECR, Chennai"
-                    value={customVenue.area}
-                    onChange={e => setCustomVenue(v => ({ ...v, area: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="form-label">Cost per Day (₹)</label>
-                  <input className="form-input" type="number" placeholder="e.g. 150000"
-                    value={customVenue.cost_per_day || (wedding.mandapam_id?.startsWith('custom_') ? wedding.mandapam_cost_per_day : '')}
-                    onChange={e => {
-                      const val = parseInt(e.target.value) || 0;
-                      setCustomVenue(v => ({ ...v, cost_per_day: val }));
-                      if (!isTraditionalType) update('mandapam_cost_per_day', val);
-                    }} />
-                </div>
-              </div>
-              {/* Show button only for traditional types as a "confirm" action, otherwise it's real-time */}
-              {(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') && (
-                <button
-                  disabled={!customVenue.name || !customVenue.cost_per_day}
-                  onClick={() => {
-                    updateMany({
-                      mandapam_id: 'custom_' + Date.now(),
-                      mandapam_name: customVenue.name,
-                      mandapam_cost_per_day: customVenue.cost_per_day,
-                    })
-                    setShowCustomForm(false)
-                  }}
-                  style={{
-                    marginTop: 12, padding: '10px 22px', borderRadius: 10, border: 'none',
-                    background: customVenue.name && customVenue.cost_per_day ? 'linear-gradient(135deg,#ffb703,#fb8500)' : '#ccc',
-                    color: '#023047', fontWeight: 700, fontSize: 13, cursor: 'pointer'
-                  }}>
-                   Use Custom Venue
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* 4. Cost Breakdown (Show whenever a venue is selected or if it's a custom type) */}
-          {(wedding.mandapam_id || (wedding.venue_type !== 'Banquet Hall' && wedding.venue_type !== 'Hotel 3-5 Star')) && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ marginBottom: 10 }}>
-                <label className="form-label">Number of Days / Events</label>
-                <input className="form-input" type="number" min={1} max={30}
-                  style={{ maxWidth: 120 }}
-                  value={wedding.num_days}
+              <div>
+                <label className="form-label" style={{ marginBottom: 6 }}>Venue Name</label>
+                <input className="form-input" placeholder={wedding.venue_type === 'Beach Venue' ? 'e.g. Blue Lagoon' : 'e.g. Green Meadows'}
+                  value={customVenue.name || (wedding.mandapam_id?.startsWith('custom_') ? wedding.mandapam_name : '')}
                   onChange={e => {
-                    const v = e.target.value === '' ? '' : Math.min(30, Math.max(0, parseInt(e.target.value) || 0));
-                    update('num_days', v);
+                    const val = e.target.value;
+                    setCustomVenue(cv => ({ ...cv, name: val }));
+                    if (!(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star')) {
+                      updateMany({ mandapam_name: val, mandapam_id: 'custom_auto' });
+                    }
                   }} />
               </div>
-              <div style={{
-                padding: '12px 16px', background: '#fff8e1',
-                borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-              }}>
-                <div>
-                  <span style={{ fontWeight: 600, color: C.primary }}>
-                    {wedding.venue_type} Total Cost
-                  </span>
-                  <div style={{ fontSize: 11, color: '#7a5900', marginTop: 2 }}>
-                    {formatRupees(wedding.mandapam_cost_per_day || 0)}/day × {wedding.num_days || 1} day(s)
-                  </div>
-                </div>
-                <span style={{ fontFamily: 'EB Garamond, serif', fontSize: 22, fontWeight: 800, color: '#7a5900' }}>
-                  {formatRupees((wedding.mandapam_cost_per_day || 0) * (wedding.num_days || 1) * (wedding.cost_multipliers?.['Venue'] || 1))}
-                </span>
+              <div>
+                <label className="form-label" style={{ marginBottom: 6 }}>Est. Cost per Day (₹)</label>
+                <input className="form-input" type="number" placeholder="100000"
+                  value={customVenue.cost_per_day || (wedding.mandapam_id?.startsWith('custom_') ? wedding.mandapam_cost_per_day : '')}
+                  onChange={e => {
+                    const cpd = parseInt(e.target.value) || 0;
+                    setCustomVenue(cv => ({ ...cv, cost_per_day: cpd }));
+                    if (!(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star')) {
+                      update('mandapam_cost_per_day', cpd);
+                    }
+                  }} />
               </div>
+              {(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') && (
+                <div style={{ display: 'flex', alignItems: 'end' }}>
+                  <button onClick={() => {
+                    updateMany({ mandapam_id: 'custom_' + Date.now(), mandapam_name: customVenue.name, mandapam_cost_per_day: customVenue.cost_per_day });
+                    setShowCustomForm(false);
+                  }} style={{ background: C.primary, color: 'white', border: 'none', padding: '10px 16px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', width: '100%' }}>
+                    Add Custom Venue
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* 5. Tool Bar */}
-          {mapsUrl && (
-            <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '8px 16px', background: C.light, borderRadius: 10,
-                  color: C.primary, fontWeight: 600, fontSize: 13, textDecoration: 'none',
-                  border: `1.5px solid ${C.sky}`
-                }}>
-                 Find on Google Maps
-              </a>
-              {(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') && (
-                <button onClick={() => setShowCustomForm(v => !v)}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '8px 16px', background: '#fffbea', borderRadius: 10,
-                    color: '#7a5900', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                    border: `1.5px solid ${C.amber}`
-                  }}>
-                  {showCustomForm ? '✕ Cancel' : '+ Add Custom Venue'}
-                </button>
-              )}
+          {/* 4. Calculator Summary (Only if cost/venue is known) */}
+          {(wedding.mandapam_cost_per_day > 0 || wedding.mandapam_id) && (
+            <div style={{ padding: '16px', background: '#f0fdf4', borderRadius: 12, border: '1.5px solid #6ee7b7' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#065f46', fontSize: 14 }}>{wedding.mandapam_name || wedding.venue_type} — Cost Est.</div>
+                  <div style={{ fontSize: 13, color: '#047857' }}>
+                    Days of Event: 
+                    <input type="number" min={1} value={wedding.num_days} 
+                      onChange={e => update('num_days', parseInt(e.target.value) || 1)}
+                      style={{ width: 45, border: 'none', background: 'white', borderRadius: 4, marginLeft: 8, textAlign: 'center', fontWeight: 700 }} />
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#065f46', fontFamily: 'EB Garamond, serif' }}>
+                    {formatRupees((wedding.mandapam_cost_per_day || 0) * (wedding.num_days || 1))}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#059669' }}>Total for {wedding.num_days || 1} day(s)</div>
+                </div>
+              </div>
             </div>
           )}
         </div>
