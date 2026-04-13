@@ -11,9 +11,32 @@ const sectionStyle = (i) => ({
 
 const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4fa', sky: '#8ecae6' }
 
-function StateCitySelector({ stateKey, districtKey, label, wedding, update, onDistrictSelect }) {
-  const states = Object.keys(INDIA_STATES_DISTRICTS).sort()
-  const districts = wedding[stateKey] ? INDIA_STATES_DISTRICTS[wedding[stateKey]] || [] : []
+const COASTAL_LOCATIONS = {
+  "Goa": ["Panaji","Margao","Vasco da Gama","Mapusa","Ponda"],
+  "Tamil Nadu": ["Chennai", "Thoothukudi", "Pondicherry"],
+  "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode", "Alappuzha", "Kannur"],
+  "Maharashtra": ["Mumbai", "Thane"],
+  "Andhra Pradesh": ["Visakhapatnam", "Kakinada", "Nellore"],
+  "Odisha": ["Puri"],
+  "Gujarat": ["Surat", "Bharuch"],
+  "Puducherry": ["Puducherry", "Karaikal"],
+  "Lakshadweep": ["Kavaratti", "Agatti"],
+  "Andaman & Nicobar": ["Port Blair", "Havelock Island", "Neil Island"]
+}
+
+function StateCitySelector({ stateKey, districtKey, label, wedding, update, onDistrictSelect, filterBeach }) {
+  let states = Object.keys(INDIA_STATES_DISTRICTS).sort()
+  
+  if (filterBeach) {
+    states = states.filter(s => COASTAL_LOCATIONS[s])
+  }
+
+  const districts = wedding[stateKey] 
+    ? (filterBeach && COASTAL_LOCATIONS[wedding[stateKey]] 
+        ? COASTAL_LOCATIONS[wedding[stateKey]] 
+        : (INDIA_STATES_DISTRICTS[wedding[stateKey]] || [])) 
+    : []
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
       <div>
@@ -35,7 +58,7 @@ function StateCitySelector({ stateKey, districtKey, label, wedding, update, onDi
             if (districtKey === 'groom_district') update('groom_hometown', e.target.value)
             if (e.target.value) onDistrictSelect?.()
           }}>
-          <option value="">-- Select District --</option>
+          <option value="">-- Select {filterBeach ? 'Beach Spot' : 'District'} --</option>
           {districts.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
       </div>
@@ -124,6 +147,7 @@ export default function Tab2Venue() {
         <div className="section-title"> Wedding City <span style={{color: '#E01A22'}}>*</span></div>
         <StateCitySelector stateKey="wedding_state" districtKey="wedding_district"
           label="Wedding Location" wedding={wedding} update={update}
+          filterBeach={wedding.venue_type === 'Beach Venue'}
           onDistrictSelect={() => scrollToNextSection('wedding-city', 420)} />
         {wedding.wedding_district && (
           <div style={{
