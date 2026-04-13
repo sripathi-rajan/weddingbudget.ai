@@ -1,0 +1,657 @@
+import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useWedding, SFX_ITEMS, formatRupees } from '../context/WeddingContext'
+import { MultiImageSelector } from '../components/ImageCard'
+import { scrollToNextSection } from '../utils/scrollToNext'
+
+const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4fa', sky: '#8ecae6', orange: '#fb8500' }
+
+// ─── TAB 6: SUNDRIES ──────────────────────────────────────────────────────────
+export function Tab6Sundries() {
+  const { wedding, update } = useWedding()
+  const [basketImageErrors, setBasketImageErrors] = useState({})
+  const guests = wedding.total_guests || 0
+  const rooms  = wedding.num_rooms || Math.ceil((wedding.outstation_guests || 0) / 2)
+
+  const defaultBasketRate   = { luxury: 2500, standard: 800, minimal: 300 }[wedding.room_basket_budget || 'standard']
+  const defaultHamperRate   = { luxury: 3000, standard: 1000, minimal: 500 }[wedding.room_basket_budget || 'standard']
+
+  const ritualCostBase = (wedding.events || []).reduce((s, e) => {
+    if (e === 'Haldi')                return s + 10000
+    if (e === 'Mehendi')              return s + 18000
+    if (e === 'Wedding Day Ceremony') return s + 25000
+    if (e === 'Engagement')           return s + 8000
+    return s
+  }, 0)
+
+  const ov = wedding.sundry_overrides || {}
+  const getVal = (key, def) => ov[key] !== undefined ? ov[key] : def
+  const setOv = (key, val) => update('sundry_overrides', { ...ov, [key]: val })
+
+  const basketQty   = getVal('basketQty',   rooms)
+  const basketPrice = getVal('basketPrice',  defaultBasketRate)
+  const hamperQty   = getVal('hamperQty',   guests)
+  const hamperPrice = getVal('hamperPrice', defaultHamperRate)
+  const ritualAmt   = getVal('ritualAmt',   ritualCostBase)
+  const stationQty  = getVal('stationQty',  guests)
+  const stationPP   = getVal('stationPP',   200)
+  const photoVideo  = getVal('photoVideo',  80000)
+  const makeupHair  = getVal('makeupHair',  50000)
+
+  const basketTotal  = basketQty  * basketPrice
+  const hamperTotal  = hamperQty  * hamperPrice
+  const stationTotal = stationQty * stationPP
+  const subTotal     = basketTotal + hamperTotal + ritualAmt + stationTotal + photoVideo + makeupHair
+  const contingency  = Math.round(subTotal * 0.08)
+  const baseSundryTotal = subTotal + contingency
+  const sundryTotal = Math.round(baseSundryTotal * (wedding.cost_multipliers?.['Sundries & Basics'] || 1))
+
+  const inp = (val, key, w=80) => (
+    <input type="number" min={0} value={val}
+      onChange={e => setOv(key, parseInt(e.target.value) || 0)}
+      style={{ width: w, padding: '6px 10px', border: `1.5px solid ${C.sky}`,
+        borderRadius: 8, fontSize: 13, fontFamily: 'Inter,sans-serif' }} />
+  )
+
+  const rows = [
+    { label: ' Room Welcome Baskets', qtyKey:'basketQty', qty:basketQty, priceKey:'basketPrice', price:basketPrice, total:basketTotal },
+    { label: ' Gift Hampers (per guest)', qtyKey:'hamperQty', qty:hamperQty, priceKey:'hamperPrice', price:hamperPrice, total:hamperTotal },
+    { label: ' Stationery & Invitations', qtyKey:'stationQty', qty:stationQty, priceKey:'stationPP', price:stationPP, total:stationTotal },
+  ]
+
+  return (
+    <div>
+      {/* Room Basket Tier */}
+      <div className="section-card" data-section="sundries-main">
+        <div className="section-title"> Room Basket Tier <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+          {[
+            { id:'luxury',   emoji:'', label:'Luxury',   rate:'₹2,500/room', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
+            { id:'standard', emoji:'', label:'Standard', rate:'₹800/room', imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+            { id:'minimal',  emoji:'', label:'Minimal',  rate:'₹300/room', imageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#475569' },
+          ].map(opt => (
+            (() => {
+              const selected = wedding.room_basket_budget === opt.id
+              return (
+            <div key={opt.id} onClick={() => { update('room_basket_budget', opt.id); scrollToNextSection('sundries-main', 420) }}
+              style={{
+                border: selected ? '2px solid #C9A84C' : '2px solid transparent',
+                borderRadius:12,
+                padding:18,
+                textAlign:'center',
+                cursor:'pointer',
+                backgroundColor: opt.fallbackColor,
+                backgroundImage: !basketImageErrors[opt.id]
+                  ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${opt.imageUrl})`
+                  : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                transition:'all 0.2s ease',
+                boxShadow: selected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+                minHeight: 120,
+                position: 'relative',
+                color: '#fff',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              {!basketImageErrors[opt.id] && (
+                <img
+                  src={opt.imageUrl}
+                  alt=""
+                  onError={() => setBasketImageErrors(prev => ({ ...prev, [opt.id]: true }))}
+                  style={{ display: 'none' }}
+                />
+              )}
+              {selected && (
+                <span style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  background: '#C9A84C',
+                  color: '#111',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: 12,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                }}>✓</span>
+              )}
+              <div style={{ fontSize:34 }}>{opt.emoji}</div>
+              <div style={{ fontWeight:700, marginTop:6, fontSize:16, color:'#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{opt.label}</div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.85)', fontWeight:700, marginTop:2 }}>{opt.rate}</div>
+            </div>
+              )
+            })()
+          ))}
+        </div>
+      </div>
+
+      {/* Sundries Table */}
+      <div className="section-card" data-section="hampers">
+        <div className="section-title"> Sundries — Editable <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+        <div style={{ overflowX:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:14 }}>
+            <thead>
+              <tr style={{ background: C.light }}>
+                {['Item','Qty','Unit Price (₹)','Total'].map(h=>(
+                  <th key={h} style={{ padding:'10px 14px', textAlign: h==='Total'?'right':'left',
+                    fontWeight:700, color:C.primary, borderBottom:`2px solid ${C.amber}`, fontSize:13 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.label} style={{ background: i%2===0 ? 'white' : C.light }}>
+                  <td style={{ padding:'12px 14px', fontWeight:600, color:C.primary }}>{r.label}</td>
+                  <td style={{ padding:'12px 14px' }}>{inp(r.qty, r.qtyKey)}</td>
+                  <td style={{ padding:'12px 14px' }}>{inp(r.price, r.priceKey, 100)}</td>
+                  <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:700, color:C.blue }}>{formatRupees(r.total)}</td>
+                </tr>
+              ))}
+              {/* Ritual Materials */}
+              <tr style={{ background:'white' }}>
+                <td style={{ padding:'12px 14px', fontWeight:600, color:C.primary }}> Ritual Materials (puja samagri)</td>
+                <td style={{ padding:'12px 14px', color:'#4a7a94', fontSize:12 }}>—</td>
+                <td style={{ padding:'12px 14px' }}>
+                  {inp(ritualAmt, 'ritualAmt', 110)}
+                  <div style={{ fontSize:10, color:'#4a7a94', marginTop:2 }}>total ₹</div>
+                </td>
+                <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:700, color:C.blue }}>{formatRupees(ritualAmt)}</td>
+              </tr>
+              {/* Photography */}
+              <tr style={{ background: C.light }}>
+                <td style={{ padding:'12px 14px', fontWeight:600, color:C.primary }}> Photography & Videography</td>
+                <td style={{ padding:'12px 14px', color:'#4a7a94', fontSize:12 }}>—</td>
+                <td style={{ padding:'12px 14px' }}>
+                  {inp(photoVideo, 'photoVideo', 110)}
+                  <div style={{ fontSize:10, color:'#4a7a94', marginTop:2 }}>total ₹</div>
+                </td>
+                <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:700, color:C.blue }}>{formatRupees(photoVideo)}</td>
+              </tr>
+              {/* Makeup */}
+              <tr style={{ background:'white' }}>
+                <td style={{ padding:'12px 14px', fontWeight:600, color:C.primary }}> Bridal Makeup & Hair</td>
+                <td style={{ padding:'12px 14px', color:'#4a7a94', fontSize:12 }}>—</td>
+                <td style={{ padding:'12px 14px' }}>
+                  {inp(makeupHair, 'makeupHair', 110)}
+                  <div style={{ fontSize:10, color:'#4a7a94', marginTop:2 }}>total ₹</div>
+                </td>
+                <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:700, color:C.blue }}>{formatRupees(makeupHair)}</td>
+              </tr>
+              <tr style={{ background: C.light }}>
+                <td colSpan={3} style={{ padding:'12px 14px', fontWeight:700, color:C.primary }}>Sub-total</td>
+                <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:700, fontSize:15 }}>{formatRupees(subTotal)}</td>
+              </tr>
+              <tr style={{ background:'#fffbea' }}>
+                <td style={{ padding:'12px 14px', fontWeight:600, color:'#7a5900' }}> Contingency (8%)</td>
+                <td colSpan={2} style={{ padding:'12px 14px', fontSize:12, color:'#4a7a94' }}>Auto-calculated</td>
+                <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:700, color:C.orange }}>{formatRupees(contingency)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ marginTop:16, background:`linear-gradient(135deg,${C.primary},${C.blue})`,
+          borderRadius:14, padding:'18px 24px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div>
+            <div style={{ color:'white', fontSize:14, fontWeight:600 }}>Total Sundries</div>
+            <div style={{ color:'rgba(255,255,255,0.7)', fontSize:12 }}>Including 8% contingency</div>
+          </div>
+          <div style={{ fontFamily:'EB Garamond,serif', fontSize:32, fontWeight:800, color:C.amber, textAlign: 'right' }}>
+            {formatRupees(sundryTotal)}
+            {(wedding.cost_multipliers?.['Sundries & Basics'] || 1) !== 1 && (
+              <div style={{ fontSize: 10, fontWeight: 400, color: 'white', opacity: 0.8 }}>
+                (AI Optimised ×{wedding.cost_multipliers['Sundries & Basics'].toFixed(2)})
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Next button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          position: 'sticky', bottom: '1.5rem',
+          display: 'flex', justifyContent: 'center',
+          zIndex: 50, marginTop: '2rem'
+        }}
+      >
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('weddingNextTab'))}
+          style={{
+            background: '#111', color: '#fff',
+            border: 'none', borderRadius: '10px',
+            padding: '14px 40px', fontSize: '15px',
+            fontWeight: 600, cursor: 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+          }}
+        >
+          Next: Logistics →
+        </button>
+      </motion.div>
+    </div>
+  )
+}
+
+// ─── TAB 7: LOGISTICS ─────────────────────────────────────────────────────────
+const VEHICLE_CONFIG = {
+  'Innova':           { capacity: 7,  base_fare: 1500, per_km: 18, label: 'Innova Crysta (7 pax)' },
+  'Tempo Traveller':  { capacity: 12, base_fare: 2000, per_km: 22, label: 'Tempo Traveller (12 pax)' },
+  'Bus':              { capacity: 40, base_fare: 5000, per_km: 45, label: 'Mini Bus (40 pax)' },
+}
+
+const GHODI_RATES = {
+  'Mumbai': 28000, 'Delhi': 25000, 'Chennai': 18000, 'Hyderabad': 18000,
+  'Bengaluru': 22000, 'Kolkata': 15000, 'Jaipur': 20000, 'Pune': 20000,
+  'Ahmedabad': 18000, 'Lucknow': 15000, 'Amritsar': 16000, 'Chandigarh': 18000,
+}
+
+const CITY_AVG_DISTANCE = {
+  'Mumbai': 32, 'Delhi': 28, 'New Delhi': 28, 'Chennai': 20, 'Hyderabad': 25,
+  'Bengaluru': 35, 'Kolkata': 18, 'Jaipur': 12, 'Pune': 15, 'Ahmedabad': 18,
+  'Lucknow': 14, 'Amritsar': 12, 'Chandigarh': 15, 'Surat': 10,
+}
+
+const TRAVEL_MODES = ['Air', 'Train', 'Car', 'Other']
+
+export function Tab7Logistics() {
+  const { wedding, update } = useWedding()
+
+  const district = wedding.wedding_district || ''
+  const hasOutstation = wedding.has_outstation ?? null   // null = unanswered
+  const transportPct = wedding.transport_pct || 0
+  const totalGuests = wedding.total_guests || 0
+  const outstationGuests = hasOutstation ? Math.ceil(totalGuests * transportPct / 100) : 0
+  const transferCars = Math.ceil(outstationGuests / 3)
+  const transferCost = hasOutstation && transportPct > 0 ? transferCars * 4500 * 2 : 0
+
+  // kept for breakup label only
+  const sourceType = wedding.transfer_source_type || 'Airport'
+  const vehType = wedding.vehicle_type || 'Innova'
+  const guestsPerVehicle = 3
+  const fleetSize = transferCars
+  const costPerTrip = 4500
+  const autoDistance = 20
+
+  // Bride / Groom travel cost — auto-calculated from mode + distance
+  const calcTravel = (mode, distKm) => {
+    if (!mode || !distKm) return 0
+    if (mode === 'Car')   return Math.round(1500 + distKm * 18)
+    if (mode === 'Train') return Math.round(500  + distKm * 2.5)
+    if (mode === 'Air')   return Math.round(2000 + distKm * 5)
+    return Math.round(distKm * 12)
+  }
+  const brideTravel = calcTravel(wedding.bride_travel_mode, wedding.bride_travel_distance_km)
+  const groomTravel = calcTravel(wedding.groom_travel_mode, wedding.groom_travel_distance_km)
+
+  // Ghodi
+  const ghodiCost = wedding.ghodi ? (GHODI_RATES[district] || 15000) : 0
+
+  // Dholi
+  const dholiCost = (wedding.dholi_count || 0) * (wedding.dholi_hours || 2) * 4000
+
+  // SFX
+  const SFX_COSTS = { 'Cold Pyro': 18000, 'Confetti Cannon': 10000, 'Smoke Machine': 8000, 'Laser Show': 30000, 'Flower Cannon': 12000 }
+  const sfxCost = (wedding.sfx_items || []).reduce((s, item) => s + (SFX_COSTS[item] || 0), 0)
+
+  const baseLogisticsTotal = transferCost + ghodiCost + dholiCost + sfxCost + brideTravel + groomTravel
+  const logisticsTotal = Math.round(baseLogisticsTotal * (wedding.cost_multipliers?.['Logistics & Transport'] || 1))
+
+  useEffect(() => {
+    if (wedding.logistics_total !== logisticsTotal) update('logistics_total', logisticsTotal)
+  }, [logisticsTotal])
+
+  const mapsUrl = district
+    ? `https://www.google.com/maps/dir/${encodeURIComponent(sourceType + ' ' + district)}/${encodeURIComponent((wedding.mandapam_name || 'Wedding Venue') + ' ' + district)}`
+    : null
+
+  return (
+    <div>
+      {/* Guest Transfer — 3-step simplified flow */}
+      <div className="section-card" data-section="transport-type" style={{ fontFamily: "'DM Sans','Inter',sans-serif" }}>
+        <div className="section-title"> Guest Transfer <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+
+        {/* Step 1 */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 12 }}>
+            Are any guests coming from out of town?
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {[true, false].map(val => {
+              const sel = hasOutstation === val
+              return (
+                <button key={String(val)} onClick={() => {
+                  update('has_outstation', val)
+                  if (!val) update('transport_pct', 0)
+                  scrollToNextSection('transport-type', 420)
+                }}
+                  style={{
+                    flex: 1, padding: '14px 0', borderRadius: 12, fontSize: 15, fontWeight: 700,
+                    cursor: 'pointer', transition: 'all 0.15s',
+                    border: `1.5px solid ${sel ? '#D4537E' : '#EBEBEB'}`,
+                    background: sel ? '#FDF2F8' : 'white',
+                    color: sel ? '#D4537E' : '#555',
+                  }}>
+                  {val ? 'Yes' : 'No'}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Step 2 — animated reveal */}
+        <AnimatePresence>
+          {hasOutstation === true && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 12 }}>
+                  What % of guests need transport?
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[20, 30, 50, 75, 100].map(pct => {
+                    const sel = transportPct === pct
+                    return (
+                      <button key={pct} onClick={() => update('transport_pct', pct)}
+                        style={{
+                          padding: '7px 18px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                          cursor: 'pointer', transition: 'all 0.15s',
+                          border: `1.5px solid ${sel ? '#D4537E' : '#EBEBEB'}`,
+                          background: sel ? '#FDF2F8' : 'white',
+                          color: sel ? '#D4537E' : '#555',
+                        }}>
+                        {pct}%
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Step 3 — stat boxes */}
+              {transportPct > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 8 }}>
+                  {[
+                    { label: 'Outstation guests', value: outstationGuests },
+                    { label: 'Innova Crystas needed', value: transferCars },
+                    { label: 'Estimated cost', value: `₹${(transferCost / 100000).toFixed(1)}L` },
+                  ].map(s => (
+                    <div key={s.label} style={{
+                      background: '#F8F8F8', borderRadius: 12, padding: '16px 14px', textAlign: 'center',
+                      border: '1px solid #EBEBEB'
+                    }}>
+                      <div style={{ fontSize: 11, color: '#888', marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
+                      <div style={{ fontFamily: 'EB Garamond,serif', fontSize: 26, fontWeight: 800, color: '#111' }}>
+                        {s.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {hasOutstation === false && (
+          <div style={{ padding: '12px 16px', background: '#F8F8F8', borderRadius: 10,
+            fontSize: 13, color: '#888', border: '1px solid #EBEBEB' }}>
+            No transfer cost added.
+          </div>
+        )}
+      </div>
+
+      {/* Bride & Groom Travel */}
+      <div className="section-card" data-section="guest-transfers">
+        <div className="section-title"> Bride & Groom Travel <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+        <div style={{ fontSize: 13, color: '#4a7a94', marginBottom: 14 }}>
+          If bride or groom is travelling from another city, include their travel cost here.
+          Each ride is calculated per KM travelled.
+        </div>
+        {[
+          { role: 'Bride', modeKey: 'bride_travel_mode', distKey: 'bride_travel_distance_km',
+            travelCost: brideTravel,
+            cityLabel: wedding.bride_district || wedding.bride_hometown || 'Bride\'s City' },
+          { role: 'Groom', modeKey: 'groom_travel_mode', distKey: 'groom_travel_distance_km',
+            travelCost: groomTravel,
+            cityLabel: wedding.groom_district || wedding.groom_hometown || 'Groom\'s City' },
+        ].map(({ role, modeKey, distKey, travelCost, cityLabel }) => {
+          const mode = wedding[modeKey] || ''
+          const distKm = wedding[distKey] || 0
+          const mapsUrl = cityLabel && district
+            ? `https://www.google.com/maps/dir/${encodeURIComponent(cityLabel)}/${encodeURIComponent((wedding.mandapam_name||'Wedding Venue')+' '+(district||''))}`
+            : null
+          return (
+            <div key={role} style={{ padding: 14, background: C.light, borderRadius: 12, marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: C.primary, marginBottom: 12 }}>
+                {role === 'Bride' ? '' : ''} {role}'s Travel
+                <span style={{ fontSize: 12, color: '#4a7a94', fontWeight: 400, marginLeft: 8 }}>
+                  From: {cityLabel}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: C.primary, display: 'block', marginBottom: 4 }}>
+                    Travel Mode
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {TRAVEL_MODES.map(m => (
+                      <button key={m} onClick={() => { update(modeKey, m); scrollToNextSection('guest-transfers', 420) }}
+                        style={{ padding: '5px 12px', borderRadius: 16, fontSize: 12, fontWeight: 700,
+                          border: `2px solid ${mode===m ? C.amber : C.sky}`,
+                          background: mode===m ? C.amber : 'white',
+                          color: mode===m ? C.primary : C.blue,
+                          cursor: 'pointer' }}>
+                        {m === 'Air' ? '' : m === 'Train' ? '' : m === 'Car' ? '' : ''} {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: C.primary, display: 'block', marginBottom: 4 }}>
+                    Distance (km)
+                  </label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input type="number" min={0}
+                      value={wedding[distKey] || ''}
+                      placeholder="Enter km"
+                      onChange={e => update(distKey, parseInt(e.target.value) || 0)}
+                      style={{ width: 90, padding: '6px 10px', border: `1.5px solid ${C.sky}`,
+                        borderRadius: 8, fontSize: 13, fontFamily: 'Inter,sans-serif' }} />
+                    <button onClick={async (e) => {
+                      const btn = e.currentTarget
+                      const from = cityLabel
+                      const to = district
+                      if (!from || !to) { alert('Set ' + role + '\'s city and wedding district first'); return }
+                      btn.textContent = '...'
+                      btn.disabled = true
+                      try {
+                        const [oRes, dRes] = await Promise.all([
+                          fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(from + ', India') + '&format=json&limit=1'),
+                          fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(to + ', India') + '&format=json&limit=1')
+                        ])
+                        const [oData, dData] = await Promise.all([oRes.json(), dRes.json()])
+                        if (!oData[0] || !dData[0]) { alert('City not found. Try full name e.g. Chennai, Tamil Nadu'); btn.textContent = ' Get km'; btn.disabled = false; return }
+                        const routeRes = await fetch('https://router.project-osrm.org/route/v1/driving/' + oData[0].lon + ',' + oData[0].lat + ';' + dData[0].lon + ',' + dData[0].lat + '?overview=false')
+                        const routeData = await routeRes.json()
+                        const km = Math.round(routeData.routes[0].distance / 1000)
+                        update(distKey, km)
+                        btn.textContent = km + ' km '
+                        setTimeout(() => { btn.textContent = ' Get km'; btn.disabled = false }, 3000)
+                      } catch {
+                        alert('Auto-fetch failed. Enter km manually.')
+                        btn.textContent = ' Get km'
+                        btn.disabled = false
+                      }
+                    }} style={{ padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                      border: `1.5px solid ${C.sky}`, background: 'white', color: C.blue,
+                      cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                       Get km
+                    </button>
+                    {mapsUrl && (
+                      <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 11, color: C.blue, fontWeight: 600, textDecoration: 'none' }}>
+                         Maps
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: C.primary, display: 'block', marginBottom: 4 }}>
+                    Estimated Cost
+                  </label>
+                  {travelCost > 0 ? (
+                    <div style={{ padding: '8px 12px', background: '#e8faf0', borderRadius: 8,
+                      border: '1.5px solid #6EE7B7', display: 'inline-block' }}>
+                      <div style={{ fontFamily: 'EB Garamond,serif', fontSize: 20, fontWeight: 800, color: '#047857' }}>
+                        {formatRupees(travelCost)}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#4a7a94', marginTop: 2 }}>
+                        Auto-calculated · {distKm} km by {mode}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic', paddingTop: 8 }}>
+                      Select mode & enter distance above
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Ghodi */}
+      <div className="section-card">
+        <div className="section-title"> Baraat — Ghodi <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+        <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:8 }}>
+          <div onClick={() => update('ghodi', !wedding.ghodi)}
+            style={{ width:52, height:28, borderRadius:14, cursor:'pointer', transition:'all 0.2s',
+              background: wedding.ghodi ? C.amber : C.sky, position:'relative' }}>
+            <div style={{ position:'absolute', top:3, left: wedding.ghodi ? 26 : 3,
+              width:22, height:22, borderRadius:'50%', background:'white',
+              transition:'left 0.2s', boxShadow:'0 1px 4px rgba(0,0,0,0.2)' }} />
+          </div>
+          <span style={{ fontWeight:600, fontSize:15, color:C.primary }}>
+            {wedding.ghodi ? ' Ghodi booked' : 'Book a Ghodi for baraat'}
+          </span>
+          {wedding.ghodi && (
+            <span style={{ color:C.blue, fontWeight:700, fontSize:15 }}>
+              ≈ {formatRupees(ghodiCost)} <span style={{ fontSize:12, fontWeight:400 }}>({district || 'your city'})</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Dholi */}
+      <div className="section-card">
+        <div className="section-title"> Dholi <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+          <div>
+            <label className="form-label">Number of Dholis</label>
+            <input type="number" className="form-input" min={0} max={20}
+              value={wedding.dholi_count || 0}
+              onChange={e => update('dholi_count', parseInt(e.target.value) || 0)} />
+          </div>
+          <div>
+            <label className="form-label">Hours per Event</label>
+            <input type="number" className="form-input" min={1} max={12}
+              value={wedding.dholi_hours || 2}
+              onChange={e => update('dholi_hours', parseInt(e.target.value) || 2)} />
+          </div>
+        </div>
+        {(wedding.dholi_count || 0) > 0 && (
+          <div style={{ marginTop:10, color:C.blue, fontWeight:700, fontSize:14 }}>
+            Dholi cost: {formatRupees(dholiCost)}
+            <span style={{ fontWeight:400, color:'#4a7a94', fontSize:12, marginLeft:8 }}>
+              ({wedding.dholi_count} dholis × {wedding.dholi_hours}hr × ₹4,000/hr)
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* SFX */}
+      <div className="section-card" data-section="sfx">
+        <div className="section-title"> Special Effects (SFX) <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+        <MultiImageSelector items={SFX_ITEMS} selected={wedding.sfx_items || []}
+          onChange={v => update('sfx_items', v)} showCost />
+      </div>
+
+      {/* Total */}
+      <div className="section-card" style={{ border:`2px solid ${C.amber}` }}>
+        <div className="section-title" style={{ color:C.primary }}> Total Logistics Cost</div>
+        <div style={{ fontFamily:'EB Garamond,serif', fontSize:42, fontWeight:800,
+          color:C.primary, textAlign:'center', marginBottom:20 }}>
+          {formatRupees(logisticsTotal)}
+          {(wedding.cost_multipliers?.['Logistics & Transport'] || 1) !== 1 && (
+            <div style={{ fontSize: 11, fontWeight: 400, color: C.blue, opacity: 0.6, marginTop: -4 }}>
+              (AI Optimised ×{wedding.cost_multipliers['Logistics & Transport'].toFixed(2)})
+            </div>
+          )}
+        </div>
+
+        <div style={{ background:C.light, borderRadius:12, padding:16 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:C.primary, marginBottom:10 }}>Cost Breakup:</div>
+          {[
+            { label:'Guest Transfers', calc: transferCost>0 ? `${transferCars} Innova Crystas × 2 trips × ₹4,500 (${transportPct}% of guests)` : 'No outstation guests', val:transferCost },
+            { label:'Bride Travel', calc: wedding.bride_travel_mode ? `${wedding.bride_travel_mode} from ${wedding.bride_district||'bride city'}` : 'Not entered', val:brideTravel },
+            { label:'Groom Travel', calc: wedding.groom_travel_mode ? `${wedding.groom_travel_mode} from ${wedding.groom_district||'groom city'}` : 'Not entered', val:groomTravel },
+            { label:'Ghodi (Baraat)', calc: wedding.ghodi ? `Rate for ${district||'city'}` : 'Not booked', val:ghodiCost },
+            { label:'Dholi', calc: (wedding.dholi_count||0)>0 ? `${wedding.dholi_count} × ${wedding.dholi_hours}hr × ₹4K` : 'Not added', val:dholiCost },
+            { label:'Special Effects', calc: (wedding.sfx_items||[]).length>0 ? (wedding.sfx_items||[]).join(', ') : 'None selected', val:sfxCost },
+          ].map(r => (
+            <div key={r.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+              padding:'8px 0', borderBottom:`1px dashed rgba(33,158,188,0.3)`, fontSize:13 }}>
+              <div>
+                <div style={{ fontWeight:600, color:C.primary }}>{r.label}</div>
+                <div style={{ fontSize:11, color:'#4a7a94' }}>{r.calc}</div>
+              </div>
+              <span style={{ fontWeight:700, color: r.val>0 ? C.blue : '#4a7a94' }}>
+                {r.val > 0 ? formatRupees(r.val) : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Sticky Next button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          position: 'sticky', bottom: '1.5rem',
+          display: 'flex', justifyContent: 'center',
+          zIndex: 50, marginTop: '2rem'
+        }}
+      >
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('weddingNextTab'))}
+          style={{
+            background: '#111', color: '#fff',
+            border: 'none', borderRadius: '10px',
+            padding: '14px 40px', fontSize: '15px',
+            fontWeight: 600, cursor: 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+          }}
+        >
+          Next: Budget →
+        </button>
+      </motion.div>
+    </div>
+  )
+}
