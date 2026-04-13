@@ -189,10 +189,8 @@ function LoginPage({ onLogin, onBack }) {
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: C.navy }}>⚙️ Admin Panel</div>
-          <div style={{ fontSize: 13, color: '#888', marginTop: 8, lineHeight: 1.4 }}>
-            Login to see the RL agent stats and pricing control.
-          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.navy }}>Admin Panel</div>
+          <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Please sign in to manage the system</div>
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -1125,7 +1123,7 @@ export default function AdminPage({ onClose }) {
         <span style={{ fontSize: 20 }}></span>
         <span style={{ fontWeight: 800, fontSize: 16 }}>WeddingBudget.AI</span>
         <span style={{ opacity: 0.4, fontSize: 18 }}>|</span>
-        <span style={{ fontWeight: 600, fontSize: 14, opacity: 0.85 }}>⚙️ Admin Panel</span>
+        <span style={{ fontWeight: 600, fontSize: 14, opacity: 0.85 }}>Admin Panel</span>
         <div style={{ flex: 1 }} />
         <button onClick={onClose} style={{
           background: 'rgba(255,255,255,0.12)', border: 'none', color: 'white',

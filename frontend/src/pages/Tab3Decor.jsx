@@ -433,8 +433,7 @@ export default function Tab3Decor() {
   const totalDecor = selected.reduce((s,i) => s + i.predicted, 0)
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>3. Decor AI (Visuals)</h2>
+    <div>
       {/* Gallery */}
       <div className="section-card" data-section="decor-upload">
         <div className="section-title"> Decor Gallery <span style={{color: '#E01A22'}}>*</span></div>

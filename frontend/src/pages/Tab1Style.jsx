@@ -216,7 +216,6 @@ export default function Tab1Style() {
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', ...FONT }}>
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>1. Style & Essence</h2>
 
       {/* ── Section 0: Name ── */}
       <Section delay={0} sectionId="user-name">
@@ -246,7 +245,6 @@ export default function Tab1Style() {
 
       <Section delay={0} sectionId="wedding-date">
         <SectionTitle> Wedding Date <span style={{color: '#E01A22'}}>*</span></SectionTitle>
-        <div style={{ fontSize: 12, color: '#888', marginTop: -12, marginBottom: 12 }}>dd-mm-yyyy</div>
         <input
           type="date"
           value={wedding.wedding_date || ''}

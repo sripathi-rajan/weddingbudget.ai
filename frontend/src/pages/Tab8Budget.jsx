@@ -685,12 +685,7 @@ export default function Tab8Budget() {
   const C = { primary: '#023047', blue: '#04699b', amber: '#FB8500', light: '#f8f9fa' }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 8 }}>8. PSO Optimization</h2>
-      <p style={{ fontSize: 14, color: '#666', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>
-        Our PSO Agent runs 50 iterations to find the most value-for-money budget split.
-      </p>
-
+    <div>
       {toast && (
         <div style={{
           position: 'fixed', top: 20, right: 20, zIndex: 9999,

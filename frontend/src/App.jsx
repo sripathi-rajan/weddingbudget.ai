@@ -17,29 +17,29 @@ import GuideModal from './components/GuideModal'
 const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4fa', sky: '#8ecae6', orange: '#fb8500' }
 
 const TABS = [
-  { id: 0, label: ' Style & Essence',     short: 'Style' },
-  { id: 1, label: ' Venue & Guests',     short: 'Venue' },
-  { id: 2, label: ' Decor AI (Visuals)',  short: 'Decor' },
-  { id: 3, label: ' Food & Catering',      short: 'Food' },
-  { id: 4, label: ' Entertainment',   short: 'Artists' },
-  { id: 5, label: ' Sundries',  short: 'Sundries' },
+  { id: 0, label: ' Style', short: 'Style' },
+  { id: 1, label: ' Venue', short: 'Venue' },
+  { id: 2, label: ' Decor AI', short: 'Decor' },
+  { id: 3, label: ' Food', short: 'Food' },
+  { id: 4, label: ' Artists', short: 'Artists' },
+  { id: 5, label: ' Sundries', short: 'Sundries' },
   { id: 6, label: ' Logistics', short: 'Logistics' },
-  { id: 7, label: ' PSO Optimization',    short: 'Budget' },
+  { id: 7, label: ' Budget', short: 'Budget' },
 ]
 
 // ─── Admin Panel Tab ───────────────────────────────────────────────────────────
 const BOOKING_REQUESTS_INIT = [
-  { id:1, name:'Priya & Rahul',   date:'15 Apr 2026', budget:'₹45L', status:'Pending' },
-  { id:2, name:'Meena & Karthik', date:'22 May 2026', budget:'₹28L', status:'Pending' },
-  { id:3, name:'Sana & Ahmed',    date:'10 Jun 2026', budget:'₹62L', status:'Pending' },
+  { id: 1, name: 'Priya & Rahul', date: '15 Apr 2026', budget: '₹45L', status: 'Pending' },
+  { id: 2, name: 'Meena & Karthik', date: '22 May 2026', budget: '₹28L', status: 'Pending' },
+  { id: 3, name: 'Sana & Ahmed', date: '10 Jun 2026', budget: '₹62L', status: 'Pending' },
 ]
-const PRICING_ROWS = ['Venue','Catering','Decor','Entertainment','Logistics','Accommodation','Sundries']
+const PRICING_ROWS = ['Venue', 'Catering', 'Decor', 'Entertainment', 'Logistics', 'Accommodation', 'Sundries']
 
 function AdminTab() {
-  const [pricing, setPricing]     = useState(() => Object.fromEntries(PRICING_ROWS.map(r => [r, { min:'', max:'' }])))
-  const [toast, setToast]         = useState('')
-  const [bookings, setBookings]   = useState(BOOKING_REQUESTS_INIT)
-  const [negLog, setNegLog]       = useState([])
+  const [pricing, setPricing] = useState(() => Object.fromEntries(PRICING_ROWS.map(r => [r, { min: '', max: '' }])))
+  const [toast, setToast] = useState('')
+  const [bookings, setBookings] = useState(BOOKING_REQUESTS_INIT)
+  const [negLog, setNegLog] = useState([])
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
 
@@ -50,15 +50,15 @@ function AdminTab() {
   const handleBooking = (id, action) => {
     const b = bookings.find(x => x.id === id)
     if (action === 'Accept') {
-      setBookings(bs => bs.map(x => x.id===id ? {...x, status:'Confirmed '} : x))
+      setBookings(bs => bs.map(x => x.id === id ? { ...x, status: 'Confirmed ' } : x))
     } else if (action === 'Decline') {
-      setBookings(bs => bs.map(x => x.id===id ? {...x, status:'Declined'} : x))
+      setBookings(bs => bs.map(x => x.id === id ? { ...x, status: 'Declined' } : x))
     } else {
       const counter = prompt(`Counter offer for ${b.name} (current: ${b.budget}):`)
       if (!counter) return
       const time = new Date().toLocaleTimeString('en-IN')
-      setBookings(bs => bs.map(x => x.id===id ? {...x, status:`Counter ₹${counter} sent`} : x))
-      setNegLog(lg => [...lg, { client: b.name, budget: b.budget, counter, status:'Negotiating', time }])
+      setBookings(bs => bs.map(x => x.id === id ? { ...x, status: `Counter ₹${counter} sent` } : x))
+      setNegLog(lg => [...lg, { client: b.name, budget: b.budget, counter, status: 'Negotiating', time }])
     }
   }
 
@@ -67,9 +67,11 @@ function AdminTab() {
   return (
     <div>
       {toast && (
-        <div style={{ position:'fixed', top:20, right:20, zIndex:9999,
-          background:'#059669', color:'white', padding:'10px 20px', borderRadius:10,
-          fontWeight:700, fontSize:14, boxShadow:'0 4px 20px rgba(0,0,0,0.2)' }}>
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 9999,
+          background: '#059669', color: 'white', padding: '10px 20px', borderRadius: 10,
+          fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+        }}>
           {toast}
         </div>
       )}
@@ -77,35 +79,37 @@ function AdminTab() {
       {/* Section A — Pricing Control */}
       <div className="section-card">
         <div className="section-title"> Pricing Control</div>
-        <div style={{ overflowX:'auto' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ background:'var(--ivory-dark)' }}>
-                {['Category','Min ₹','Max ₹',''].map(h => (
-                  <th key={h} style={{ padding:'10px 12px', textAlign:'left',
-                    fontWeight:700, color:C.primary, borderBottom:`2px solid ${C.amber}` }}>{h}</th>
+              <tr style={{ background: 'var(--ivory-dark)' }}>
+                {['Category', 'Min ₹', 'Max ₹', ''].map(h => (
+                  <th key={h} style={{
+                    padding: '10px 12px', textAlign: 'left',
+                    fontWeight: 700, color: C.primary, borderBottom: `2px solid ${C.amber}`
+                  }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {PRICING_ROWS.map((row, i) => (
-                <tr key={row} style={{ background: i%2===0 ? 'white' : 'var(--ivory)' }}>
-                  <td style={{ padding:'10px 12px', fontWeight:700, color:C.primary }}>{row}</td>
-                  <td style={{ padding:'8px 12px' }}>
+                <tr key={row} style={{ background: i % 2 === 0 ? 'white' : 'var(--ivory)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: C.primary }}>{row}</td>
+                  <td style={{ padding: '8px 12px' }}>
                     <input type="number" placeholder="Min ₹" value={pricing[row].min}
-                      onChange={e => setPricing(p => ({...p, [row]:{...p[row], min: e.target.value}}))}
-                      style={{ width:110, padding:'6px 10px', border:`1.5px solid ${C.sky}`, borderRadius:8, fontSize:13 }} />
+                      onChange={e => setPricing(p => ({ ...p, [row]: { ...p[row], min: e.target.value } }))}
+                      style={{ width: 110, padding: '6px 10px', border: `1.5px solid ${C.sky}`, borderRadius: 8, fontSize: 13 }} />
                   </td>
-                  <td style={{ padding:'8px 12px' }}>
+                  <td style={{ padding: '8px 12px' }}>
                     <input type="number" placeholder="Max ₹" value={pricing[row].max}
-                      onChange={e => setPricing(p => ({...p, [row]:{...p[row], max: e.target.value}}))}
-                      style={{ width:110, padding:'6px 10px', border:`1.5px solid ${C.sky}`, borderRadius:8, fontSize:13 }} />
+                      onChange={e => setPricing(p => ({ ...p, [row]: { ...p[row], max: e.target.value } }))}
+                      style={{ width: 110, padding: '6px 10px', border: `1.5px solid ${C.sky}`, borderRadius: 8, fontSize: 13 }} />
                   </td>
-                  <td style={{ padding:'8px 12px' }}>
+                  <td style={{ padding: '8px 12px' }}>
                     <button onClick={() => handlePriceUpdate(row)} style={{
-                      padding:'7px 18px', borderRadius:8, border:'none', cursor:'pointer',
-                      background:`linear-gradient(135deg,${C.amber},${C.orange})`,
-                      color:C.primary, fontWeight:700, fontSize:12
+                      padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      background: `linear-gradient(135deg,${C.amber},${C.orange})`,
+                      color: C.primary, fontWeight: 700, fontSize: 12
                     }}>Update</button>
                   </td>
                 </tr>
@@ -118,32 +122,35 @@ function AdminTab() {
       {/* Section B — Booking Requests */}
       <div className="section-card">
         <div className="section-title"> Booking Requests</div>
-        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {bookings.map(b => {
             const done = b.status !== 'Pending'
             const bg = b.status.includes('Confirmed') ? '#f0fdf4' : b.status.includes('Declined') ? '#fef2f2' : b.status.includes('Counter') ? '#fffbea' : 'white'
             return (
-              <div key={b.id} style={{ padding:18, borderRadius:14, border:`1.5px solid ${statusColor(b.status)}20`, background:bg }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:10 }}>
+              <div key={b.id} style={{ padding: 18, borderRadius: 14, border: `1.5px solid ${statusColor(b.status)}20`, background: bg }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                   <div>
-                    <div style={{ fontWeight:700, fontSize:15, color:C.primary }}>{b.name}</div>
-                    <div style={{ fontSize:12, color:'#4a7a94', marginTop:3 }}>{b.date} · {b.budget}</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: C.primary }}>{b.name}</div>
+                    <div style={{ fontSize: 12, color: '#4a7a94', marginTop: 3 }}>{b.date} · {b.budget}</div>
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     {!done ? (
                       <>
-                        <button onClick={() => handleBooking(b.id,'Accept')} style={{
-                          padding:'8px 18px', borderRadius:8, border:'none', cursor:'pointer',
-                          background:'#059669', color:'white', fontWeight:700, fontSize:13 }}>Accept</button>
-                        <button onClick={() => handleBooking(b.id,'Negotiate')} style={{
-                          padding:'8px 18px', borderRadius:8, border:`2px solid ${C.amber}`, cursor:'pointer',
-                          background:'white', color:C.primary, fontWeight:700, fontSize:13 }}>Negotiate</button>
-                        <button onClick={() => handleBooking(b.id,'Decline')} style={{
-                          padding:'8px 18px', borderRadius:8, border:'none', cursor:'pointer',
-                          background:'#DC2626', color:'white', fontWeight:700, fontSize:13 }}>Decline</button>
+                        <button onClick={() => handleBooking(b.id, 'Accept')} style={{
+                          padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                          background: '#059669', color: 'white', fontWeight: 700, fontSize: 13
+                        }}>Accept</button>
+                        <button onClick={() => handleBooking(b.id, 'Negotiate')} style={{
+                          padding: '8px 18px', borderRadius: 8, border: `2px solid ${C.amber}`, cursor: 'pointer',
+                          background: 'white', color: C.primary, fontWeight: 700, fontSize: 13
+                        }}>Negotiate</button>
+                        <button onClick={() => handleBooking(b.id, 'Decline')} style={{
+                          padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                          background: '#DC2626', color: 'white', fontWeight: 700, fontSize: 13
+                        }}>Decline</button>
                       </>
                     ) : (
-                      <span style={{ fontWeight:700, fontSize:14, color:statusColor(b.status) }}>{b.status}</span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: statusColor(b.status) }}>{b.status}</span>
                     )}
                   </div>
                 </div>
@@ -157,30 +164,32 @@ function AdminTab() {
       <div className="section-card">
         <div className="section-title"> Negotiation Log</div>
         {negLog.length === 0 ? (
-          <div style={{ fontSize:13, color:'#4a7a94', fontStyle:'italic' }}>No negotiations yet.</div>
+          <div style={{ fontSize: 13, color: '#4a7a94', fontStyle: 'italic' }}>No negotiations yet.</div>
         ) : (
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background:'var(--ivory-dark)' }}>
-                  {['Client','Budget','Counter','Status','Time'].map(h => (
-                    <th key={h} style={{ padding:'10px 12px', textAlign:'left',
-                      fontWeight:700, color:C.primary, borderBottom:`2px solid ${C.amber}` }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {negLog.map((l,i) => (
-                <tr key={i} style={{ background: i%2===0 ? 'white' : 'var(--ivory)' }}>
-                  <td style={{ padding:'10px 12px', fontWeight:600 }}>{l.client}</td>
-                  <td style={{ padding:'10px 12px' }}>{l.budget}</td>
-                  <td style={{ padding:'10px 12px', color:C.blue, fontWeight:700 }}>₹{l.counter}</td>
-                  <td style={{ padding:'10px 12px' }}>{l.status}</td>
-                  <td style={{ padding:'10px 12px', color:'#4a7a94', fontSize:12 }}>{l.time}</td>
+                <tr style={{ background: 'var(--ivory-dark)' }}>
+                  {['Client', 'Budget', 'Counter', 'Status', 'Time'].map(h => (
+                    <th key={h} style={{
+                      padding: '10px 12px', textAlign: 'left',
+                      fontWeight: 700, color: C.primary, borderBottom: `2px solid ${C.amber}`
+                    }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {negLog.map((l, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'white' : 'var(--ivory)' }}>
+                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{l.client}</td>
+                    <td style={{ padding: '10px 12px' }}>{l.budget}</td>
+                    <td style={{ padding: '10px 12px', color: C.blue, fontWeight: 700 }}>₹{l.counter}</td>
+                    <td style={{ padding: '10px 12px' }}>{l.status}</td>
+                    <td style={{ padding: '10px 12px', color: '#4a7a94', fontSize: 12 }}>{l.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -191,14 +200,14 @@ function AdminTab() {
 function validateTab(tabIndex, wedding) {
   const errors = []
   if (tabIndex === 0) {
-    if (!wedding.wedding_date)   errors.push('Select a wedding date')
-    if (!wedding.wedding_type)   errors.push('Select a wedding type')
-    if (!wedding.budget_tier)    errors.push('Select a budget style')
+    if (!wedding.wedding_date) errors.push('Select a wedding date')
+    if (!wedding.wedding_type) errors.push('Select a wedding type')
+    if (!wedding.budget_tier) errors.push('Select a budget style')
     if (!wedding.events?.length) errors.push('Select at least one event')
   }
   if (tabIndex === 1) {
-    if (!wedding.venue_type)       errors.push('Select a venue type')
-    if (!wedding.wedding_state)    errors.push('Select the wedding state')
+    if (!wedding.venue_type) errors.push('Select a venue type')
+    if (!wedding.wedding_state) errors.push('Select the wedding state')
     if (!wedding.wedding_district) errors.push('Select the wedding district')
     if (!wedding.total_guests || wedding.total_guests < 1) errors.push('Enter the number of guests')
   }
@@ -207,8 +216,8 @@ function validateTab(tabIndex, wedding) {
   }
   if (tabIndex === 3) {
     if (!wedding.food_categories?.length) errors.push('Select food category (Veg / Non-Veg / Jain)')
-    if (!wedding.food_budget_tier)        errors.push('Select a food budget tier')
-    if (!wedding.bar_type)                errors.push('Select bar type')
+    if (!wedding.food_budget_tier) errors.push('Select a food budget tier')
+    if (!wedding.bar_type) errors.push('Select bar type')
   }
   if (tabIndex === 4) {
     if (!wedding.selected_artists?.length) errors.push('Select at least one artist / entertainment option')
@@ -387,7 +396,7 @@ function TopNav({ activeTab, allTabs, isAdminRole, goTo, isMobile, onOpenGuide }
           onMouseEnter={(e) => e.target.style.background = 'rgba(233, 30, 140, 0.2)'}
           onMouseLeave={(e) => e.target.style.background = 'rgba(233, 30, 140, 0.1)'}
         >
-          📖 Guide
+          Guide
         </button>
       </div>
     </nav>
@@ -474,9 +483,11 @@ function AppInner() {
       />
       <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
       <div style={{ width: '100%', height: 3, background: '#EBEBEB' }}>
-        <div style={{ height: '100%', background: '#D4537E',
+        <div style={{
+          height: '100%', background: '#D4537E',
           width: `${(activeTab / 7) * 100}%`,
-          transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+          transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+        }} />
       </div>
 
       <div ref={topRef} style={{ maxWidth: 1100, margin: '0 auto', width: '100%', padding: '24px 20px', flex: 1, paddingBottom: 24 }}>
@@ -484,9 +495,11 @@ function AppInner() {
         <div className="progress-dots" style={{ display: 'flex', gap: 5, marginBottom: 24, justifyContent: 'center' }}>
           {allTabs.filter(tab => !tab.adminOnly || isAdminRole).map(tab => (
             <div key={tab.id} className="progress-dot" onClick={() => goTo(tab.id)}
-              style={{ width: activeTab === tab.id ? 28 : 8, height: 8, borderRadius: 4,
+              style={{
+                width: activeTab === tab.id ? 28 : 8, height: 8, borderRadius: 4,
                 background: tab.id < activeTab ? '#D4537E' : activeTab === tab.id ? '#D4537E' : '#EBEBEB',
-                transition: 'all 0.3s', cursor: 'pointer' }} />
+                transition: 'all 0.3s', cursor: 'pointer'
+              }} />
           ))}
         </div>
 
@@ -514,14 +527,18 @@ function AppInner() {
         </AnimatePresence>
 
         {/* Next / Back */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 28, paddingTop: 20,
-          borderTop: `1.5px solid ${C.sky}`, flexWrap: 'wrap', gap: 10 }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 28, paddingTop: 20,
+          borderTop: `1.5px solid ${C.sky}`, flexWrap: 'wrap', gap: 10
+        }}>
           <button onClick={() => { setValidationErrors([]); goTo(Math.max(0, activeTab - 1)) }}
             disabled={activeTab === 0}
-            style={{ padding: '11px 26px', borderRadius: 12, border: `2px solid ${C.sky}`,
+            style={{
+              padding: '11px 26px', borderRadius: 12, border: `2px solid ${C.sky}`,
               background: 'white',
               cursor: activeTab === 0 ? 'not-allowed' : 'pointer',
-              color: C.primary, fontWeight: 700, fontSize: 15, flex: isMobile ? 1 : 'unset' }}>
+              color: C.primary, fontWeight: 700, fontSize: 15, flex: isMobile ? 1 : 'unset'
+            }}>
             ← Back
           </button>
           <div style={{ fontSize: 13, color: '#4a7a94', fontWeight: 600, order: isMobile ? -1 : 0, width: isMobile ? '100%' : 'auto', textAlign: 'center' }}>
@@ -532,7 +549,7 @@ function AppInner() {
           ) : (
             <button key="finalise-btn" onClick={() => window.dispatchEvent(new CustomEvent('weddingFinalize'))}
               className="btn-primary" style={{ background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', flex: isMobile ? 1 : 'unset' }}>
-               Finalise
+              Finalise
             </button>
           )}
         </div>

@@ -242,8 +242,7 @@ export default function Tab5Artists() {
   const total = Math.round(baseTotal * (wedding.cost_multipliers?.['Artists & Entertainment'] || 1))
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>5. Entertainment</h2>
+    <div>
       {/* Named/Celebrity Artists */}
       <div className="section-card" data-section="artist-select">
         <div className="section-title"> Named / Celebrity Artists <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
