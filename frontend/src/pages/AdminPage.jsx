@@ -126,7 +126,7 @@ function Btn({ children, onClick, color = C.navy, textColor = 'white', small = f
 }
 
 // ── Login Page ─────────────────────────────────────────────────────────────────
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, onBack }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -164,11 +164,11 @@ function LoginPage({ onLogin }) {
         background: 'white', borderRadius: 20, padding: '44px 48px', width: 380,
         boxShadow: '0 12px 60px rgba(0,0,0,0.4)'
       }}>
-        <div style={{ 
-          background: '#f8f9fa', 
-          border: `1.5px solid ${C.sky}`, 
-          borderRadius: 10, 
-          padding: '12px', 
+        <div style={{
+          background: '#f8f9fa',
+          border: `1.5px solid ${C.sky}`,
+          borderRadius: 10,
+          padding: '12px',
           marginBottom: 24,
           fontSize: 12,
           color: C.navy,
@@ -217,6 +217,20 @@ function LoginPage({ onLogin }) {
         }}>
           {loading ? 'Verifying…' : 'Login →'}
         </button>
+
+        <div style={{ marginTop: 20, textAlign: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+          <button onClick={onBack} style={{
+            background: 'none', border: 'none', color: '#888',
+            fontWeight: 600, fontSize: 13, cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif", transition: 'color 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '0 auto'
+          }}
+            onMouseEnter={e => e.target.style.color = C.navy}
+            onMouseLeave={e => e.target.style.color = '#888'}
+          >
+            <span style={{ fontSize: 16 }}>←</span> Back
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -994,7 +1008,7 @@ export default function AdminPage({ onClose }) {
     return () => clearInterval(interval)
   }, [])
 
-  if (!authed) return <LoginPage onLogin={() => setAuthed(true)} />
+  if (!authed) return <LoginPage onLogin={() => setAuthed(true)} onBack={onClose} />
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f7fb', fontFamily: "'DM Sans', sans-serif" }}>

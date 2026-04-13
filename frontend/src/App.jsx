@@ -450,7 +450,7 @@ function AppInner() {
     goTo(Math.min(TABS.length - 1, activeTab + 1))
   }
 
-  if (showAdmin) return <AdminPage onClose={() => setShowAdmin(false)} />
+  if (showAdmin) return <AdminPage onClose={() => { setShowAdmin(false); setShowWelcome(true) }} />
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
