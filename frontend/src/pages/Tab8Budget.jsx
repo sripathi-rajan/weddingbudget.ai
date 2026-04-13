@@ -1131,52 +1131,62 @@ export default function Tab8Budget() {
               </svg>
             </div>
 
-            <h2 style={{ fontWeight: 700, color: '#111', fontSize: 22, marginBottom: 10, textAlign: 'center' }}>
-              Info submitted to admin
+            <h2 style={{ fontWeight: 700, color: '#111', fontSize: 24, marginBottom: 10, textAlign: 'center' }}>
+              Thank you! ✨
             </h2>
             <p style={{
-              color: '#555', fontSize: 14, textAlign: 'center', maxWidth: 340,
-              lineHeight: 1.6, marginBottom: 28
+              color: '#555', fontSize: 15, textAlign: 'center', maxWidth: 340,
+              lineHeight: 1.6, marginBottom: 28, fontWeight: 500
             }}>
-              Your wedding budget plan has been sent to your planner.
-              They'll review and get back within 24 hours.
+              Your wedding budget plan has been successfully finalized. 
+              Our decorators and planners will review it and get in touch with you shortly.
             </p>
 
             {/* Total stat card */}
             {budget && (
               <div style={{
                 background: '#FFF0F5', border: '1.5px solid #F9A8C9',
-                borderRadius: 14, padding: '18px 32px', textAlign: 'center', marginBottom: 28
+                borderRadius: 14, padding: '18px 32px', textAlign: 'center', marginBottom: 28,
+                boxShadow: '0 8px 16px rgba(212,83,126,0.1)'
               }}>
                 <div style={{
-                  fontSize: 11, color: '#888', fontWeight: 600,
+                  fontSize: 11, color: '#888', fontWeight: 700,
                   letterSpacing: 1, marginBottom: 6
-                }}>TOTAL BUDGET</div>
+                }}>FINAL ESTIMATE</div>
                 <div style={{
-                  fontFamily: 'EB Garamond,serif', fontSize: 36,
+                  fontFamily: 'EB Garamond,serif', fontSize: 40,
                   fontWeight: 900, color: '#D4537E', lineHeight: 1
                 }}>
                   {formatRupees((budget?.total?.mid || 0))}
                 </div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Mid estimate</div>
+                <div style={{ fontSize: 11, color: '#D4537E', marginTop: 4, fontWeight: 600 }}>Plan Secured</div>
               </div>
             )}
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={() => window.location.href = '/'}
+                style={{
+                  padding: '14px 28px', borderRadius: 12, border: 'none',
+                  background: 'linear-gradient(135deg, #111, #333)', color: '#fff', 
+                  fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                Exit to Website
+              </button>
               <button onClick={printPDF}
                 style={{
-                  padding: '12px 22px', borderRadius: 10, border: '2px solid #D4537E',
-                  background: '#D4537E', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+                  padding: '14px 28px', borderRadius: 12, border: '2px solid #D4537E',
+                  background: 'transparent', color: '#D4537E', fontWeight: 700, fontSize: 14, cursor: 'pointer'
                 }}>
                 Download PDF
               </button>
               <button onClick={() => setSubmitted(false)}
                 style={{
-                  padding: '12px 22px', borderRadius: 10, border: '2px solid #111',
-                  background: 'transparent', color: '#111', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+                  padding: '14px 28px', borderRadius: 12, border: 'none',
+                  background: '#F3F4F6', color: '#555', fontWeight: 600, fontSize: 14, cursor: 'pointer'
                 }}>
-                Back to Budget
+                View Summary
               </button>
             </div>
           </motion.div>

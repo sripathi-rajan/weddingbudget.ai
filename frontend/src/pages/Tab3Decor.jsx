@@ -200,6 +200,7 @@ function DecorLibrarySection() {
   const [labelledOnly, setLabelledOnly] = useState(false)
   const [libSelected, setLibSelected] = useState([])
   const [apiError, setApiError] = useState(false)
+  const [showLibSuccess, setShowLibSuccess] = useState(false)
 
   const fetchItems = useCallback(async (pg, append = false) => {
     setLoading(true)
@@ -237,6 +238,8 @@ function DecorLibrarySection() {
 
   const addToBudget = () => {
     updateDecorSelections(libSelected.map(s => s.id), libTotal)
+    setShowLibSuccess(true)
+    setTimeout(() => setShowLibSuccess(false), 3000)
   }
 
   return (
@@ -322,12 +325,15 @@ function DecorLibrarySection() {
             <div style={{ fontFamily:'EB Garamond,serif', fontSize:22, fontWeight:800, color:'#FDE68A' }}>
               {formatRupees(libTotal)}
             </div>
-            <button onClick={addToBudget} style={{
+            <button onClick={addToBudget} disabled={showLibSuccess} style={{
               padding:'10px 20px', borderRadius:10, border:'none',
-              background:'#FFB703', color:'#023047', fontWeight:700, fontSize:13, cursor:'pointer',
-              minHeight: 44
+              background: showLibSuccess ? '#059669' : '#FFB703', 
+              color: showLibSuccess ? 'white' : '#023047',
+              fontWeight:700, fontSize:13, cursor: showLibSuccess ? 'default' : 'pointer',
+              minHeight: 44,
+              transition: 'all 0.2s'
             }}>
-              Add to Budget
+              {showLibSuccess ? '✓ Added!' : 'Confirm & Add to Budget'}
             </button>
           </div>
         </div>
@@ -346,6 +352,7 @@ export default function Tab3Decor() {
   const [predicting, setPredicting] = useState(false)
   const [predStep, setPredStep] = useState('')
   const [imgRelevanceWarn, setImgRelevanceWarn] = useState('')
+  const [showAiSuccess, setShowAiSuccess] = useState(false)
 
   const toggleItem = (item) => {
     const exists = selected.find(s => s.id === item.id)
@@ -689,26 +696,43 @@ export default function Tab3Decor() {
               </div>
             )}
 
+            {showAiSuccess && (
+              <div style={{ 
+                marginBottom: 16, padding: '10px 14px', background: '#ecfdf5', 
+                borderRadius: 10, border: '1.5px solid #10b981', color: '#047857',
+                fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
+                animation: 'slideUp 0.3s ease-out'
+              }}>
+                <span>✅</span> Added to decor budget successfully!
+              </div>
+            )}
+
             {prediction.predicted_cost !== 0 && prediction.predicted_cost !== 350000 && (
               <button
-                onClick={() => updateDecorSelections(['ai-upload'], prediction.predicted_cost)}
+                onClick={() => {
+                  updateDecorSelections(['ai-upload'], prediction.predicted_cost)
+                  setShowAiSuccess(true)
+                  setTimeout(() => setShowAiSuccess(false), 3000)
+                }}
+                disabled={showAiSuccess}
                 style={{
                   width:'100%',
                   marginTop: 16,
                   padding:'14px',
                   borderRadius:12,
                   border:'none',
-                  background:'#FFB703',
-                  color:'#023047',
+                  background: showAiSuccess ? '#059669' : '#FFB703',
+                  color: showAiSuccess ? 'white' : '#023047',
                   fontWeight:700,
                   fontSize:15,
-                  cursor:'pointer',
-                  transition: 'background 0.2s'
+                  cursor: showAiSuccess ? 'default' : 'pointer',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: showAiSuccess ? 'scale(0.98)' : 'scale(1)'
                 }}
-                onMouseOver={e => e.currentTarget.style.background = '#FFA000'}
-                onMouseOut={e => e.currentTarget.style.background = '#FFB703'}
+                onMouseOver={e => !showAiSuccess && (e.currentTarget.style.background = '#FFA000')}
+                onMouseOut={e => !showAiSuccess && (e.currentTarget.style.background = '#FFB703')}
               >
-                Add {formatRupees(prediction.predicted_cost)} to Decor Budget
+                {showAiSuccess ? '✓ Added Successfully!' : `Confirm & Add ${formatRupees(prediction.predicted_cost)} to Budget`}
               </button>
             )}
           </div>
