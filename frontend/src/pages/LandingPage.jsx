@@ -726,12 +726,7 @@ export default function LandingPage({ onEnter, onOpenGuide }) {
           >
             Start Planning — It's Free →
           </button>
-          <button
-            style={{ ...S.btnOutline, ...S.btnLarge, background: 'rgba(233, 30, 140, 0.1)', borderColor: '#e91e8c', color: '#ffc1e3' }}
-            onClick={onOpenGuide}
-          >
-            📖 Open Walkthrough
-          </button>
+
           <button
             style={{ ...S.btnOutline, ...S.btnLarge }}
             onClick={scrollToFeatures}
@@ -831,7 +826,7 @@ export default function LandingPage({ onEnter, onOpenGuide }) {
           <div>
             <h4 style={S.footerColH4}>Resources</h4>
             <a href="#" style={S.footerColA}>Blog</a>
-            <a href="#" style={S.footerColA}>Guides</a>
+
             <a href="#" style={S.footerColA}>Pricing</a>
             <a href="#" style={S.footerColA}>FAQ</a>
           </div>
