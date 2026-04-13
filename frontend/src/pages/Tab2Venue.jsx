@@ -135,12 +135,24 @@ export default function Tab2Venue() {
         )}
       </div>
 
-      {/* Mandapam Picker */}
-      {wedding.wedding_district && (
+      {/* Venue Selection Picker */}
+      {wedding.wedding_district && wedding.venue_type !== 'Home Intimate' && (
         <div className="section-card" data-section="mandapam-picker">
-          <div className="section-title"> Select Mandapam / Venue Hall <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+          <div className="section-title"> 
+            Select {
+              wedding.venue_type === 'Banquet Hall' ? 'Mandapam / Hall' :
+              wedding.venue_type === 'Wedding Lawn' ? 'Lawn / Garden Area' :
+              wedding.venue_type === 'Beach Venue' ? 'Beach Spot / Area' :
+              wedding.venue_type === 'Resort' ? 'Resort Area / Hall' :
+              wedding.venue_type === 'Farmhouse' ? 'Farmhouse / Plot' :
+              wedding.venue_type === 'Hotel 3-5 Star' ? 'Hotel Hall / Banquet' :
+              wedding.venue_type === 'Heritage Palace' ? 'Palace Area / Courtyard' :
+              wedding.venue_type === 'Temple' ? 'Temple Hall / Area' :
+              'Specific Venue / Hall'
+            } <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span>
+          </div>
           <div style={{ fontSize: 13, color: '#4a7a94', marginBottom: 16 }}>
-            Popular venues in {wedding.wedding_district}. Prices are market estimates — verify directly with venue.
+            Popular choices in {wedding.wedding_district}. Prices are market estimates — verify directly with venue.
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 16 }}>
@@ -169,9 +181,17 @@ export default function Tab2Venue() {
                 borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center'
               }}>
                 <div>
-                  <span style={{ fontWeight: 600, color: C.primary }}>Mandapam Total Cost</span>
+                  <span style={{ fontWeight: 600, color: C.primary }}>
+                    {
+                      wedding.venue_type === 'Banquet Hall' ? 'Mandapam' :
+                      wedding.venue_type === 'Wedding Lawn' ? 'Lawn' :
+                      wedding.venue_type === 'Beach Venue' ? 'Beach' :
+                      wedding.venue_type === 'Hotel 3-5 Star' ? 'Banquet' :
+                      'Venue'
+                    } Total Cost
+                  </span>
                   <div style={{ fontSize: 11, color: '#7a5900', marginTop: 2 }}>
-                    {formatRupees(wedding.mandapam_cost_per_day || 0)}/day × {wedding.num_days || 1} day(s) — Admin-set price
+                    {formatRupees(wedding.mandapam_cost_per_day || 0)}/day × {wedding.num_days || 1} day(s)
                   </div>
                 </div>
                 <span style={{ fontFamily: 'EB Garamond, serif', fontSize: 22, fontWeight: 800, color: '#7a5900' }}>
