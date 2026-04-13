@@ -166,21 +166,21 @@ function AdminTab() {
                   {['Client','Budget','Counter','Status','Time'].map(h => (
                     <th key={h} style={{ padding:'10px 12px', textAlign:'left',
                       fontWeight:700, color:C.primary, borderBottom:`2px solid ${C.amber}` }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {negLog.map((l,i) => (
-                  <tr key={i} style={{ background: i%2===0 ? 'white' : 'var(--ivory)' }}>
-                    <td style={{ padding:'10px 12px', fontWeight:600 }}>{l.client}</td>
-                    <td style={{ padding:'10px 12px' }}>{l.budget}</td>
-                    <td style={{ padding:'10px 12px', color:C.blue, fontWeight:700 }}>₹{l.counter}</td>
-                    <td style={{ padding:'10px 12px' }}>{l.status}</td>
-                    <td style={{ padding:'10px 12px', color:'#4a7a94', fontSize:12 }}>{l.time}</td>
-                  </tr>
                 ))}
-              </tbody>
-            </table>
+              </tr>
+            </thead>
+            <tbody>
+              {negLog.map((l,i) => (
+                <tr key={i} style={{ background: i%2===0 ? 'white' : 'var(--ivory)' }}>
+                  <td style={{ padding:'10px 12px', fontWeight:600 }}>{l.client}</td>
+                  <td style={{ padding:'10px 12px' }}>{l.budget}</td>
+                  <td style={{ padding:'10px 12px', color:C.blue, fontWeight:700 }}>₹{l.counter}</td>
+                  <td style={{ padding:'10px 12px' }}>{l.status}</td>
+                  <td style={{ padding:'10px 12px', color:'#4a7a94', fontSize:12 }}>{l.time}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           </div>
         )}
       </div>
@@ -530,7 +530,7 @@ function AppInner() {
           {activeTab < 7 ? (
             <button key="next-btn" onClick={handleNext} className="btn-primary" style={{ flex: isMobile ? 1 : 'unset' }}>Next →</button>
           ) : (
-            <button key="finalise-btn" onClick={() => window.dispatchEvent(new CustomEvent('weddingFinalise'))}
+            <button key="finalise-btn" onClick={() => window.dispatchEvent(new CustomEvent('weddingFinalize'))}
               className="btn-primary" style={{ background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', flex: isMobile ? 1 : 'unset' }}>
                Finalise
             </button>

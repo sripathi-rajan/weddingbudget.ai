@@ -1,4 +1,4 @@
-from icrawler.builtin import GoogleImageCrawler
+from icrawler.builtin import BingImageCrawler
 import os, shutil, csv
 from PIL import Image
 
@@ -23,9 +23,8 @@ for query, func_type, base_cost in SEARCHES:
     os.makedirs(folder, exist_ok=True)
 
     print(f"\nDownloading: {query}")
-    crawler = GoogleImageCrawler(storage={"root_dir": folder})
-    crawler.crawl(keyword=query, max_num=30,
-                  filters={"size": "medium", "type": "photo"})
+    crawler = BingImageCrawler(storage={"root_dir": folder})
+    crawler.crawl(keyword=query, max_num=30)
 
     # Move and rename downloaded images
     saved = 0
