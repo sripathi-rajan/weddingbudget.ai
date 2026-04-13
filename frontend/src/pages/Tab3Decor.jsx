@@ -353,6 +353,32 @@ export default function Tab3Decor() {
   const [predStep, setPredStep] = useState('')
   const [imgRelevanceWarn, setImgRelevanceWarn] = useState('')
   const [showAiSuccess, setShowAiSuccess] = useState(false)
+  const [hasAddedPrediction, setHasAddedPrediction] = useState(false)
+
+  // Sync with context on mount
+  useEffect(() => {
+    if (wedding.decor_selections?.length > 0) {
+      const fromLib = DECOR_LIBRARY.filter(d => wedding.decor_selections.includes(d.id))
+        .map(d => ({ ...d, ...localPredict(d) }))
+      
+      const aiItems = wedding.decor_selections
+        .filter(id => typeof id === 'string' && id.startsWith('ai-pred-'))
+        .map(id => {
+            const data = JSON.parse(id.replace('ai-pred-', ''))
+            return {
+                id,
+                name: `AI: ${data.name || 'Custom Decor'}`,
+                predicted: data.cost,
+                low: Math.round(data.cost * 0.85),
+                high: Math.round(data.cost * 1.2),
+                emoji: '✨',
+                isAi: true
+            }
+        })
+
+      setSelected([...fromLib, ...aiItems])
+    }
+  }, [])
 
   const toggleItem = (item) => {
     const exists = selected.find(s => s.id === item.id)
@@ -374,6 +400,8 @@ export default function Tab3Decor() {
     setImgRelevanceWarn('')
     setPredicting(true)
     setPrediction(null)
+    setHasAddedPrediction(false)
+    setShowAiSuccess(false)
 
     try {
       setPredStep('Analysing decor attributes...')
@@ -696,43 +724,52 @@ export default function Tab3Decor() {
               </div>
             )}
 
-            {showAiSuccess && (
-              <div style={{ 
-                marginBottom: 16, padding: '10px 14px', background: '#ecfdf5', 
-                borderRadius: 10, border: '1.5px solid #10b981', color: '#047857',
-                fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
-                animation: 'slideUp 0.3s ease-out'
-              }}>
-                <span>✅</span> Added to decor budget successfully!
-              </div>
-            )}
-
             {prediction.predicted_cost !== 0 && prediction.predicted_cost !== 350000 && (
               <button
                 onClick={() => {
-                  updateDecorSelections(['ai-upload'], prediction.predicted_cost)
+                  const aiId = `ai-pred-${JSON.stringify({ 
+                    cost: prediction.predicted_cost, 
+                    name: uploadTag.function_type 
+                  })}`
+                  
+                  const newItem = {
+                    id: aiId,
+                    name: `AI: ${uploadTag.function_type}`,
+                    predicted: prediction.predicted_cost,
+                    low: prediction.range[0],
+                    high: prediction.range[1],
+                    emoji: '✨',
+                    isAi: true
+                  }
+
+                  const next = [...selected, newItem]
+                  setSelected(next)
+                  update('decor_total', next.reduce((s,i) => s + i.predicted, 0))
+                  update('decor_selections', next.map(s => s.id))
+                  
+                  setHasAddedPrediction(true)
                   setShowAiSuccess(true)
-                  setTimeout(() => setShowAiSuccess(false), 3000)
                 }}
-                disabled={showAiSuccess}
+                disabled={hasAddedPrediction}
                 style={{
                   width:'100%',
                   marginTop: 16,
                   padding:'14px',
                   borderRadius:12,
                   border:'none',
-                  background: showAiSuccess ? '#059669' : '#FFB703',
-                  color: showAiSuccess ? 'white' : '#023047',
+                  background: hasAddedPrediction ? '#059669' : '#FFB703',
+                  color: hasAddedPrediction ? 'white' : '#023047',
                   fontWeight:700,
                   fontSize:15,
-                  cursor: showAiSuccess ? 'default' : 'pointer',
+                  cursor: hasAddedPrediction ? 'default' : 'pointer',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transform: showAiSuccess ? 'scale(0.98)' : 'scale(1)'
+                  transform: hasAddedPrediction ? 'scale(0.98)' : 'scale(1)',
+                  opacity: hasAddedPrediction ? 0.9 : 1
                 }}
-                onMouseOver={e => !showAiSuccess && (e.currentTarget.style.background = '#FFA000')}
-                onMouseOut={e => !showAiSuccess && (e.currentTarget.style.background = '#FFB703')}
+                onMouseOver={e => !hasAddedPrediction && (e.currentTarget.style.background = '#FFA000')}
+                onMouseOut={e => !hasAddedPrediction && (e.currentTarget.style.background = '#FFB703')}
               >
-                {showAiSuccess ? '✓ Added Successfully!' : `Confirm & Add ${formatRupees(prediction.predicted_cost)} to Budget`}
+                {hasAddedPrediction ? '✓ Prediction Added to Budget' : `Confirm & Add ${formatRupees(prediction.predicted_cost)} to Budget`}
               </button>
             )}
           </div>
