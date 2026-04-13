@@ -663,7 +663,7 @@ export default function LandingPage({ onEnter, onOpenGuide }) {
               onClick={(e) => { e.preventDefault(); onOpenGuide(); }}
               className="btn-ghost"
             >
-              📖 Guide
+              Guide
             </button>
             <button
               style={S.btnGhost}

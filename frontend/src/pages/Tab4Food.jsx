@@ -287,7 +287,8 @@ export default function Tab4Food() {
   }
 
   return (
-    <div>
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>4. Food & Catering</h2>
       {/* Food Category */}
       <div className="section-card" data-section="meal-tier">
         <div className="section-title"> Food Category <span style={{color: '#E01A22'}}>*</span></div>

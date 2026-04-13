@@ -111,7 +111,8 @@ export default function Tab2Venue() {
     : null
 
   return (
-    <div>
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>2. Venue & Guests</h2>
       {/* Venue Type */}
       <div className="section-card" style={sectionStyle(0)} data-section="venue-type">
         <div className="section-title"> Venue Type <span style={{color: '#E01A22'}}>*</span></div>

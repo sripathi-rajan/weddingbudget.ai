@@ -60,7 +60,8 @@ export function Tab6Sundries() {
   ]
 
   return (
-    <div>
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>6. Sundries & Basics</h2>
       {/* Room Basket Tier */}
       <div className="section-card" data-section="sundries-main">
         <div className="section-title"> Room Basket Tier <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
@@ -315,9 +316,10 @@ export function Tab7Logistics() {
     : null
 
   return (
-    <div>
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 10 }}>7. Logistics & Transport</h2>
       {/* Guest Transfer — 3-step simplified flow */}
-      <div className="section-card" data-section="transport-type" style={{ fontFamily: "'DM Sans','Inter',sans-serif" }}>
+      <div className="section-card" data-section="transport-type" style={{ fontFamily: "'DM Sans','Inter',sans-serif' }}>
         <div className="section-title"> Guest Transfer <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
 
         {/* Step 1 */}

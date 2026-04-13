@@ -67,7 +67,7 @@ const GuideModal = ({ isOpen, onClose }) => {
           }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#111' }}>
-                📖 Judge's Walkthrough Guide
+                Walkthrough Guide
               </h2>
               <p style={{ margin: '4px 0 0 0', fontSize: 13, color: '#666' }}>
                 How to explore the WeddingBudget.AI innovation.
@@ -116,7 +116,7 @@ const GuideModal = ({ isOpen, onClose }) => {
               marginTop: 24, padding: 20, borderRadius: 16,
               background: 'linear-gradient(135deg, #1a1a2e, #2d1b33)', color: 'white'
             }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: 14, color: '#ff66b2' }}>🛠️ PRO TIP FOR JUDGES</h4>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: 14, color: '#ff66b2' }}>PRO TIP</h4>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, opacity: 0.9 }}>
                 Check out the <b>PSO Optimizer</b> on the final tab. It runs a live particle swarm simulation
                 to find the best budget split! Also, visit <b>/admin</b> to see the <b>Reinforcement Learning</b>
