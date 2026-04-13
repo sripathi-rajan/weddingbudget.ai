@@ -11,8 +11,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, r2_score
 from sklearn.model_selection import train_test_split, cross_val_score
 
-MODEL_PATH = "decor_model.joblib"
-ENCODER_PATH = "decor_encoder.joblib"
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "decor_model.joblib")
+ENCODER_PATH = os.path.join(os.path.dirname(__file__), "decor_pca.joblib")
 
 # ─── Comprehensive Training Dataset ──────────────────────────────────────────
 # Real-world inspired rates from Indian wedding industry (2024)

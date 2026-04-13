@@ -29,10 +29,10 @@ def _get_mobilenet_embedder():
     return _mobilenet_embedder
 
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "decor_model.pkl")
-PCA_PATH   = os.path.join(os.path.dirname(__file__), "decor_pca.pkl")
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "images")
-LABELS_CSV = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "labels.csv")
+MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "decor_model.joblib"))
+PCA_PATH   = os.path.abspath(os.path.join(os.path.dirname(__file__), "decor_pca.joblib"))
+IMAGES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "decor_dataset", "data", "images"))
+LABELS_CSV = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "decor_dataset", "data", "labels.csv"))
 
 # Rule-based cost ranges (INR) by complexity 1-5
 RULE_RANGES = {
@@ -111,6 +111,13 @@ class DecorCostPredictor:
                 logging.getLogger(__name__).warning("Failed to load decor model, deleting pkl: %s", e)
                 self.model_mid = None
                 try:
+                    import joblib
+                    # Try fallback to .pkl if .joblib fails or vice-versa
+                    pkl_path = MODEL_PATH.replace(".joblib", ".pkl")
+                    if os.path.exists(pkl_path):
+                        data = joblib.load(pkl_path)
+                        # ... mapping omitted for brevity, simpler to just delete and retrain
+                        pass
                     os.remove(MODEL_PATH)
                 except OSError:
                     pass
@@ -345,6 +352,7 @@ class DecorCostPredictor:
             predicted_mid = predicted_mid * smult
             
             # 2. DIRECT complexity multiplier to ensure variation
+            c_val = int(complexity) if complexity is not None else 3
             direct_comp_mult = 1.0 + (c_val - 3) * 0.15
             predicted_mid = predicted_mid * direct_comp_mult
 

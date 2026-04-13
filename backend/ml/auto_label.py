@@ -11,8 +11,8 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "images")
-LABELS_CSV = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "labels.csv")
+IMAGES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "decor_dataset", "data", "images"))
+LABELS_CSV = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "decor_dataset", "data", "labels.csv"))
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
@@ -158,6 +158,12 @@ def run_auto_label(force: bool = False) -> int:
     image_paths = [abs_path for _, _, abs_path in items]
 
     # Extract MobileNetV2 embeddings for all images
+    # Check for RENDER environnement to avoid OOM on tiny instances
+    if os.environ.get("RENDER"):
+        import logging
+        logging.warning("Auto-labeling skipped on Render to save memory. Use local CLI or Admin Panel to label images.")
+        return 0
+
     embeddings = _extract_mobilenet_embeddings(image_paths)
 
     # Cluster into 6 styles
