@@ -61,7 +61,7 @@ function SelCard({ item, isSelected, onToggle, hasAnySelected, wide = false }) {
         position: 'relative',
       }}
     >
-      <div style={{ position: 'relative', overflow: 'hidden', background: cardBg, lineHeight: 0 }}>
+      <div className="sel-card-img-wrapper" style={{ position: 'relative', overflow: 'hidden', background: cardBg, lineHeight: 0 }}>
         {!imgErr && item.imageUrl ? (
           <img
             src={item.imageUrl}

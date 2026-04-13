@@ -665,10 +665,21 @@ h1, h2, h3 { font-family: 'EB Garamond', serif; }
   .budget-style-card {
     display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
-    gap: 12px !important;
-    padding: 14px 16px !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    padding: 0 !important;
     text-align: left !important;
+    min-height: 110px !important;
+  }
+  .budget-style-card .sel-card-img-wrapper {
+    width: 100px !important;
+    height: auto !important;
+    flex-shrink: 0 !important;
+  }
+  .budget-style-card .sel-card-img-wrapper img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
   }
   .budget-style-card .card-icon {
     font-size: 28px !important;
@@ -677,12 +688,20 @@ h1, h2, h3 { font-family: 'EB Garamond', serif; }
   .budget-style-card .card-label {
     font-size: 14px !important;
     font-weight: 600 !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
   }
   .budget-style-card .card-desc {
-    font-size: 12px !important;
-    color: #888 !important;
-    white-space: nowrap !important;
+    font-size: 11px !important;
+    color: #666 !important;
+    white-space: normal !important;
+    margin-top: 4px !important;
+  }
+  .budget-style-card > div:last-child {
+    padding: 12px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    flex: 1 !important;
   }
 }
 
