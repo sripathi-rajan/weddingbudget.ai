@@ -503,58 +503,6 @@ export default function Tab3Decor() {
         </div>
       </div>
 
-      {/* Selected Summary */}
-      {selected.length > 0 && (
-        <div className="section-card" style={{ border:'1.5px solid var(--primary)' }}>
-          <div className="section-title"> Your Shortlist ({selected.length} items)</div>
-          <div style={{ marginBottom:16 }}>
-            {selected.map(s => (
-              <div key={s.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
-                <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-                  <span style={{ fontSize:26 }}>{s.emoji}</span>
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:14 }}>{s.name}</div>
-                    <div style={{ display:'flex', gap:6, marginTop:4 }}>
-                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, fontWeight:700,
-                        background:COMPLEXITY_COLOR[s.complexity]+'20', color:COMPLEXITY_COLOR[s.complexity] }}>{s.complexity}</span>
-                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, fontWeight:700,
-                        background:(STYLE_COLOR[s.style]||'#888')+'20', color:STYLE_COLOR[s.style]||'#888' }}>{s.style}</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <div>
-                    <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color:'var(--primary)', textAlign:'right' }}>
-                      {formatRupees(s.predicted)}
-                    </div>
-                    <div style={{ fontSize:11, color:'var(--muted)', textAlign:'right' }}>
-                      {formatRupees(s.low)} – {formatRupees(s.high)}
-                    </div>
-                  </div>
-                  <button onClick={(e)=>{e.stopPropagation();toggleItem(s)}} style={{
-                    width:28, height:28, borderRadius:'50%', border:'none', background:'#FEE2E2',
-                    color:'#DC2626', cursor:'pointer', fontWeight:'bold', fontSize:16
-                  }}>×</button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ background:'linear-gradient(135deg,#023047,#04699b)', borderRadius:14,
-            padding:'18px 24px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <div style={{ color:'white', fontSize:15, fontWeight:600 }}>Total Decor Budget</div>
-            <div style={{ fontFamily:'EB Garamond,serif', fontSize:30, fontWeight:800, color:'#FDE68A' }}>
-              {formatRupees(totalDecor * (wedding.cost_multipliers?.['Decor & Design'] || 1))}
-              {(wedding.cost_multipliers?.['Decor & Design'] || 1) !== 1 && (
-                <div style={{ fontSize: 10, textAlign: 'right', fontWeight: 400, color: 'white', opacity: 0.8 }}>
-                   (AI Optimised ×{wedding.cost_multipliers['Decor & Design'].toFixed(2)})
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* AI Predictor */}
       <div className="section-card" data-section="decor-style" style={{ border:'2px solid var(--secondary)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
@@ -775,6 +723,58 @@ export default function Tab3Decor() {
           </div>
         )}
       </div>
+
+      {/* Selected Summary */}
+      {selected.length > 0 && (
+        <div className="section-card" style={{ border:'1.5px solid var(--primary)' }}>
+          <div className="section-title"> Your Shortlist ({selected.length} items)</div>
+          <div style={{ marginBottom:16 }}>
+            {selected.map(s => (
+              <div key={s.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
+                <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+                  <span style={{ fontSize:26 }}>{s.emoji}</span>
+                  <div>
+                    <div style={{ fontWeight:700, fontSize:14 }}>{s.name}</div>
+                    <div style={{ display:'flex', gap:6, marginTop:4 }}>
+                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, fontWeight:700,
+                        background:COMPLEXITY_COLOR[s.complexity]+'20', color:COMPLEXITY_COLOR[s.complexity] }}>{s.complexity}</span>
+                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, fontWeight:700,
+                        background:(STYLE_COLOR[s.style]||'#888')+'20', color:STYLE_COLOR[s.style]||'#888' }}>{s.style}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <div>
+                    <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color:'var(--primary)', textAlign:'right' }}>
+                      {formatRupees(s.predicted)}
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--muted)', textAlign:'right' }}>
+                      {formatRupees(s.low)} – {formatRupees(s.high)}
+                    </div>
+                  </div>
+                  <button onClick={(e)=>{e.stopPropagation();toggleItem(s)}} style={{
+                    width:28, height:28, borderRadius:'50%', border:'none', background:'#FEE2E2',
+                    color:'#DC2626', cursor:'pointer', fontWeight:'bold', fontSize:16
+                  }}>×</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ background:'linear-gradient(135deg,#023047,#04699b)', borderRadius:14,
+            padding:'18px 24px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <div style={{ color:'white', fontSize:15, fontWeight:600 }}>Total Decor Budget</div>
+            <div style={{ fontFamily:'EB Garamond,serif', fontSize:30, fontWeight:800, color:'#FDE68A' }}>
+              {formatRupees(totalDecor * (wedding.cost_multipliers?.['Decor & Design'] || 1))}
+              {(wedding.cost_multipliers?.['Decor & Design'] || 1) !== 1 && (
+                <div style={{ fontSize: 10, textAlign: 'right', fontWeight: 400, color: 'white', opacity: 0.8 }}>
+                   (AI Optimised ×{wedding.cost_multipliers['Decor & Design'].toFixed(2)})
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky Next button */}
       <motion.div
