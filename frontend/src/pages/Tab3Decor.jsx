@@ -340,7 +340,7 @@ export default function Tab3Decor() {
   const { wedding, update, updateDecorSelections } = useWedding()
   const [selected, setSelected] = useState([])
   const [filter, setFilter] = useState('')
-  const [uploadTag, setUploadTag] = useState({ function_type:'Mandap', style:'Romantic', complexity:'Medium' })
+  const [uploadTag, setUploadTag] = useState({ function_type: '', style: '', complexity: '' })
   const [uploadedFile, setUploadedFile] = useState(null)
   const [prediction, setPrediction] = useState(null)
   const [predicting, setPredicting] = useState(false)
@@ -360,6 +360,10 @@ export default function Tab3Decor() {
 
   const handlePredict = async () => {
     if (!uploadedFile) return
+    if (!uploadTag.function_type || !uploadTag.style || !uploadTag.complexity) {
+        setImgRelevanceWarn('Please select Type, Style and Complexity first.')
+        return
+    }
     setImgRelevanceWarn('')
     setPredicting(true)
     setPrediction(null)
@@ -536,6 +540,7 @@ export default function Tab3Decor() {
               <label className="form-label">{label}</label>
               <select className="form-select" value={uploadTag[key]}
                 onChange={e=>setUploadTag(p=>({...p,[key]:e.target.value}))}>
+                <option value="">Select {label}...</option>
                 {opts.map(o=><option key={o} value={o}>{o}</option>)}
               </select>
             </div>

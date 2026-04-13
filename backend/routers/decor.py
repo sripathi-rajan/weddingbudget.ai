@@ -4,7 +4,7 @@ import random
 import tempfile
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -131,9 +131,9 @@ def predict_by_id(req: PredictByIdRequest, db: Session = Depends(get_db)):
 @router.post("/predict-upload")
 async def predict_upload(
     file: UploadFile = File(...),
-    function_type: Optional[str] = None,
-    style: Optional[str] = None,
-    complexity: Optional[int] = None,
+    function_type: Optional[str] = Form(None),
+    style: Optional[str] = Form(None),
+    complexity: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):
     contents = await file.read()  # must be async for UploadFile
@@ -205,11 +205,16 @@ async def predict_upload(
             except Exception:
                 pass
         
-        # Override function_type with detected one
-        use_function = detected_function
+        # Prioritize user selection if provided and not "default", otherwise use AI detection
+        user_ft = str(function_type or "").strip().lower()
+        if user_ft and user_ft != "default":
+            use_function = user_ft
+        else:
+            use_function = detected_function
 
         pred = _ml_predict(tmp_path, use_function, style, complexity)
-        pred["detected_category"] = use_function
+        pred["detected_category"] = detected_function
+        pred["used_category"] = use_function
 
     finally:
         try:

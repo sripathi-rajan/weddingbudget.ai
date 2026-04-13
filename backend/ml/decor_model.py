@@ -37,22 +37,23 @@ LABELS_CSV = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dat
 # Rule-based cost ranges (INR) by complexity 1-5
 RULE_RANGES = {
     1: (30_000,   80_000),
-    2: (80_000,  200_000),
-    3: (200_000, 500_000),
-    4: (500_000, 1_000_000),
-    5: (1_000_000, 2_500_000),
+    1: (40_000,  100_000),
+    2: (100_000, 300_000),
+    3: (300_000, 800_000),
+    4: (800_000, 1_500_000),
+    5: (1_500_000, 4_000_000),
 }
 
 REALISTIC_BOUNDS = {
-    "entrance":  (30000,   800000),
-    "mandap":    (200000,  8000000),
-    "stage":     (150000,  6000000),
-    "backdrop":  (20000,   1500000),
-    "ceiling":   (60000,   3000000),
-    "table":     (8000,    300000),
-    "lighting":  (10000,   600000),
-    "floral":    (15000,   1500000),
-    "default":   (20000,   2000000),
+    "entrance":  (20000,   800000),
+    "mandap":    (80000,   8000000),
+    "stage":     (60000,   6000000),
+    "backdrop":  (15000,   1500000),
+    "ceiling":   (40000,   3000000),
+    "table":     (5000,    300000),
+    "lighting":  (8000,    600000),
+    "floral":    (10000,   1500000),
+    "default":   (10000,   2000000),
 }
 
 
@@ -336,23 +337,33 @@ class DecorCostPredictor:
 
             rule_mid = (bounds[0] + bounds[1]) / 2
             
+            # Force ML prediction to strongly respect requested styling & complexity scaling
+            style_norm = str(style or "").capitalize()
+            smult = {"Luxury": 1.6, "Whimsical": 1.3, "Boho": 0.90, "Rustic": 0.85, "Modern": 1.1, "Romantic": 1.2, "Minimalist": 0.7}.get(style_norm, 1.0)
+            
+            # 1. Style multiplier
+            predicted_mid = predicted_mid * smult
+            
+            # 2. DIRECT complexity multiplier to ensure variation
+            direct_comp_mult = 1.0 + (c_val - 3) * 0.15
+            predicted_mid = predicted_mid * direct_comp_mult
+
             if ft_key in ["table", "floral", "lighting"]:
-                blended_mid = (predicted_mid * 0.3) + (rule_mid * 0.7)
+                blended_mid = (predicted_mid * 0.2) + (rule_mid * 0.8)
             elif ft_key in ["mandap", "stage"]:
-                blended_mid = (predicted_mid * 0.6) + (rule_mid * 0.4)
-            else:
                 blended_mid = (predicted_mid * 0.5) + (rule_mid * 0.5)
+            else:
+                blended_mid = (predicted_mid * 0.4) + (rule_mid * 0.6)
 
-            blended_low  = blended_mid * 0.75
-            blended_high = blended_mid * 1.45
+            blended_low  = blended_mid * 0.70
+            blended_high = blended_mid * 1.50
 
-            # REMOVED: hard floor clamping to bounds[0] as it caused "static price" issues
-            # Allow price to correctly reflect complexity even if below the standard floor
+            # Dynamic results: no hard floor-clamping to bounds[0]
             predicted_low  = int(blended_low)
             predicted_mid  = int(blended_mid)
             predicted_high = int(blended_high)
 
-            # Safety clamp: only to absolute minimums to prevent negative/zero values
+            # Absolute logic floors
             abs_min = bounds[0] * 0.4
             predicted_low  = max(abs_min, min(predicted_low,  bounds[1]))
             predicted_mid  = max(abs_min, min(predicted_mid,  bounds[1]))
@@ -363,6 +374,12 @@ class DecorCostPredictor:
 
             if predicted_high < predicted_low * 1.3:
                 predicted_high = int(predicted_low * 1.5)
+
+            # Forced Luxury floors
+            if style_norm == "Luxury" and c_val >= 4:
+                predicted_mid = max(predicted_mid, 500000)
+                predicted_low = max(predicted_low, 400000)
+                predicted_high = max(predicted_high, 750000)
 
             try:
                 import numpy
