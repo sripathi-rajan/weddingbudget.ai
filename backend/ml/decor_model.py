@@ -346,16 +346,20 @@ class DecorCostPredictor:
             blended_low  = blended_mid * 0.75
             blended_high = blended_mid * 1.45
 
-            predicted_low  = int(max(bounds[0], blended_low))
-            predicted_mid  = int(max(bounds[0], blended_mid))
-            predicted_high = int(max(bounds[0], blended_high))
+            # REMOVED: hard floor clamping to bounds[0] as it caused "static price" issues
+            # Allow price to correctly reflect complexity even if below the standard floor
+            predicted_low  = int(blended_low)
+            predicted_mid  = int(blended_mid)
+            predicted_high = int(blended_high)
 
-            predicted_low  = max(bounds[0], min(predicted_low,  bounds[1]))
-            predicted_mid  = max(bounds[0], min(predicted_mid,  bounds[1]))
-            predicted_high = max(bounds[0], min(predicted_high, bounds[1]))
+            # Safety clamp: only to absolute minimums to prevent negative/zero values
+            abs_min = bounds[0] * 0.4
+            predicted_low  = max(abs_min, min(predicted_low,  bounds[1]))
+            predicted_mid  = max(abs_min, min(predicted_mid,  bounds[1]))
+            predicted_high = max(abs_min, min(predicted_high, bounds[1]))
 
-            predicted_low  = min(predicted_low,  predicted_mid)
-            predicted_high = max(predicted_high, predicted_mid)
+            predicted_low  = int(min(predicted_low,  predicted_mid))
+            predicted_high = int(max(predicted_high, predicted_mid))
 
             if predicted_high < predicted_low * 1.3:
                 predicted_high = int(predicted_low * 1.5)
