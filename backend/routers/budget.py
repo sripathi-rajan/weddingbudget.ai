@@ -163,11 +163,15 @@ def get_tracker_summary(db: Session = Depends(get_db)):
     from models import BudgetTracker
     from sqlalchemy import text
 
-    # Use DISTINCT ON for PostgreSQL to get latest per category
+    # Standard SQL compatible with both SQLite and PostgreSQL
     query = text("""
-        SELECT DISTINCT ON (category) category, estimated, actual, difference
+        SELECT category, estimated, actual, difference
         FROM budget_tracker
-        ORDER BY category, created_at DESC
+        WHERE id IN (
+            SELECT MAX(id)
+            FROM budget_tracker
+            GROUP BY category
+        )
     """)
     result = db.execute(query)
     rows = result.fetchall()
