@@ -528,9 +528,10 @@ function AppInner() {
             Step {activeTab + 1} of {allTabs.filter(t => !t.adminOnly || isAdminRole).length}
           </div>
           {activeTab < 7 ? (
-            <button onClick={handleNext} className="btn-primary" style={{ flex: isMobile ? 1 : 'unset' }}>Next →</button>
+            <button key="next-btn" onClick={handleNext} className="btn-primary" style={{ flex: isMobile ? 1 : 'unset' }}>Next →</button>
           ) : (
-            <button className="btn-primary" style={{ background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', flex: isMobile ? 1 : 'unset' }}>
+            <button key="finalise-btn" onClick={() => window.dispatchEvent(new CustomEvent('weddingFinalise'))}
+              className="btn-primary" style={{ background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', flex: isMobile ? 1 : 'unset' }}>
                Finalise
             </button>
           )}
