@@ -91,9 +91,6 @@ function MandapamCard({ venue, isSelected, onSelect, hasAnySelected }) {
       <div style={{ fontWeight: 700, fontSize: 14, color: isSelected ? '#B83A64' : C.primary, marginBottom: 4 }}>{venue.name}</div>
       <div style={{ fontSize: 12, color: C.blue, fontWeight: 500, marginBottom: 6 }}> {venue.area}</div>
       <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
-        <span style={{ background: C.light, padding: '2px 8px', borderRadius: 6, color: C.primary, fontWeight: 600 }}>
-           Up to {venue.capacity.toLocaleString()} guests
-        </span>
         <span style={{ background: isSelected ? '#FBE8EF' : '#fff8e1', padding: '2px 8px', borderRadius: 6, color: isSelected ? '#B83A64' : '#7a5900', fontWeight: 700 }}>
           {formatRupees(venue.cost_per_day)}/day
         </span>
