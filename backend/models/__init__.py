@@ -112,3 +112,14 @@ class RLTrainingLog(Base):
     new_multiplier = Column(Float, nullable=False)
     accuracy_delta = Column(Float, nullable=True)
     timestamp      = Column(DateTime, server_default=func.now())
+
+
+class FinalizedBudget(Base):
+    """Final output of the wedding planner wizard, saved by users."""
+    __tablename__ = "finalized_budgets"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    user_name       = Column(String(255), nullable=True)
+    total_mid       = Column(Float, nullable=False)
+    wedding_profile = Column(Text, nullable=False)  # JSON string
+    created_at      = Column(DateTime, server_default=func.now())
