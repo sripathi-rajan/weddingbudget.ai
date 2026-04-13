@@ -361,15 +361,25 @@ export default function Tab4Food() {
       {totalGuests > 0 && (
         <div className="section-card">
           <div className="section-title">‍ Catering Staff <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14 }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
+            gap: 12 
+          }}>
             {[
               { label: 'Staff Required', value: `${staff} staff` },
-              { label: 'Rate / Staff / Day', value: `₹${STAFF_RATE.toLocaleString()}` },
-              { label: 'Days / Events', value: `${Math.max(1, (wedding.events||[]).length)} days` },
+              { label: 'Rate/Staff', value: `₹${STAFF_RATE.toLocaleString()}` },
+              { label: 'Total Days', value: `${Math.max(1, (wedding.events||[]).length)} days` },
             ].map(s => (
-              <div key={s.label} style={{ background: C.light, borderRadius: 12, padding: 14, textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: '#4a7a94', marginBottom: 4 }}>{s.label}</div>
-                <div style={{ fontFamily: 'EB Garamond,serif', fontSize: 20, fontWeight: 700, color: C.primary }}>{s.value}</div>
+              <div key={s.label} style={{ 
+                background: C.light, 
+                borderRadius: 12, 
+                padding: '12px 8px', 
+                textAlign: 'center',
+                border: `1px solid ${C.sky}44`
+              }}>
+                <div style={{ fontSize: 10, color: '#4a7a94', marginBottom: 4, fontWeight: 600 }}>{s.label}</div>
+                <div style={{ fontFamily: 'EB Garamond,serif', fontSize: 16, fontWeight: 700, color: C.primary }}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -383,16 +393,25 @@ export default function Tab4Food() {
       {totalGuests > 0 && (
         <div className="section-card">
           <div className="section-title"> Crockery & Linen Rental <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+            gap: 12 
+          }}>
             {[
-              { label: 'Crockery Rental', detail: `₹150/head × ${totalGuests} guests`, value: crockeryCost },
-              { label: 'Linen & Chair Covers', detail: `₹100/head × ${totalGuests} guests`, value: linenCost },
+              { label: 'Crockery Rental', detail: `₹150/hd × ${totalGuests}`, value: crockeryCost },
+              { label: 'Linen & Covers', detail: `₹100/hd × ${totalGuests}`, value: linenCost },
             ].map(r => (
-              <div key={r.label} style={{ background: C.light, borderRadius: 12, padding: 16,
-                border: `1px solid ${C.sky}`, textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, fontSize: 13, color: C.primary, marginBottom: 4 }}>{r.label}</div>
-                <div style={{ fontSize: 11, color: '#4a7a94', marginBottom: 8 }}>{r.detail}</div>
-                <div style={{ fontFamily: 'EB Garamond,serif', fontSize: 22, fontWeight: 700, color: C.blue }}>
+              <div key={r.label} style={{ 
+                background: C.light, 
+                borderRadius: 12, 
+                padding: 14,
+                border: `1.5px solid ${C.sky}`, 
+                textAlign: 'center' 
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 12, color: C.primary, marginBottom: 4 }}>{r.label}</div>
+                <div style={{ fontSize: 10, color: '#4a7a94', marginBottom: 8 }}>{r.detail}</div>
+                <div style={{ fontFamily: 'EB Garamond,serif', fontSize: 18, fontWeight: 700, color: C.blue }}>
                   {formatRupees(r.value)}
                 </div>
               </div>
@@ -407,9 +426,14 @@ export default function Tab4Food() {
           background: 'linear-gradient(135deg, #fffbea, #e8f4fa)',
           border: `2px solid ${C.amber}` }}>
           <div className="section-title" style={{ color: C.primary }}> Food & Beverage Estimate</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginTop: 4 }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', 
+            gap: 12, 
+            marginTop: 4 
+          }}>
             {[
-              { label: 'Food (all meals/events)', value: (() => {
+              { label: 'Food Meals', value: (() => {
                   const categories = wedding.food_categories || []
                   let t = 0
                   for (const ev of (wedding.events || [])) {
@@ -428,17 +452,23 @@ export default function Tab4Food() {
                   return t
                 })()
               },
-              { label: 'Bar / Beverages', value: ({ 'Dry Event': 0, 'Beer-Wine': 500, 'Full Bar': 1200 }[wedding.bar_type] || 0) * totalGuests * Math.max(1, (wedding.events||[]).length) },
-              { label: 'Specialty Counters', value: (wedding.specialty_counters || []).reduce((s, id) => {
+              { label: 'Bar & Bev', value: ({ 'Dry Event': 0, 'Beer-Wine': 500, 'Full Bar': 1200 }[wedding.bar_type] || 0) * totalGuests * Math.max(1, (wedding.events||[]).length) },
+              { label: 'Counters', value: (wedding.specialty_counters || []).reduce((s, id) => {
                 const item = SPECIALTY_COUNTERS.find(x => x.id === id)
                 return s + (item?.rate_per_head || 0) * totalGuests
               }, 0) },
-              { label: 'Staff + Crockery + Linen', value: staffCost + crockeryCost + linenCost },
+              { label: 'Logistics', value: staffCost + crockeryCost + linenCost },
             ].map(item => (
-              <div key={item.label} style={{ background: 'white', borderRadius: 12, padding: 16, textAlign: 'center',
-                border: `1px solid ${C.sky}` }}>
-                <div style={{ fontSize: 12, color: '#4a7a94', marginBottom: 6 }}>{item.label}</div>
-                <div style={{ fontFamily: 'EB Garamond, serif', fontSize: 22, fontWeight: 700, color: C.primary }}>
+              <div key={item.label} style={{ 
+                background: 'white', 
+                borderRadius: 12, 
+                padding: 12, 
+                textAlign: 'center',
+                border: `1px solid ${C.sky}44`,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+              }}>
+                <div style={{ fontSize: 10, color: '#4a7a94', marginBottom: 6, fontWeight: 600 }}>{item.label}</div>
+                <div style={{ fontFamily: 'EB Garamond, serif', fontSize: 16, fontWeight: 700, color: C.primary }}>
                   {formatRupees(item.value)}
                 </div>
               </div>
