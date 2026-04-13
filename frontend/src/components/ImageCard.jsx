@@ -35,6 +35,7 @@ export function ImageCard({ item, selected, onClick, showCost = false, hasAnySel
             src={item.imageUrl}
             alt=""
             onError={() => setImgError(true)}
+            style={{ width: '100%', height: 120, objectFit: 'cover', objectPosition: 'center' }}
           />
         )}
         <span

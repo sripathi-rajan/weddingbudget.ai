@@ -908,6 +908,50 @@ export default function Tab8Budget() {
             </table>
           </div>
         </div>
+        
+        {/* Scenario Comparison */}
+        {scenarios && Object.keys(scenarios).length > 0 && (
+          <div className="section-card">
+            <div className="section-title">Scenario Comparison</div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#023047', color: 'white' }}>
+                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700 }}>Category</th>
+                    {Object.keys(scenarios).map(name => (
+                      <th key={name} style={{ padding: '10px', textAlign: 'right', fontWeight: 700 }}>
+                        {name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys(scenarios.Minimalist?.items || {}).map(cat => (
+                    <tr key={cat} style={{ background: cat.indexOf('Contingency') !== -1 ? '#f0f7fc' : 'white' }}>
+                      <td style={{ padding: '8px 10px', fontWeight: 600 }}>{cat}</td>
+                      {Object.keys(scenarios).map(name => (
+                        <td key={name} style={{ padding: '8px 10px', textAlign: 'right' }}>
+                          {formatRupees(scenarios[name]?.items?.[cat]?.mid || 0)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr style={{ background: '#e8f4fa', fontWeight: 800 }}>
+                    <td style={{ padding: '12px 10px', fontSize: 15 }}>Total Budget</td>
+                    {Object.keys(scenarios).map(name => (
+                      <td key={name} style={{ padding: '12px 10px', textAlign: 'right', fontSize: 15, color: '#023047' }}>
+                        {formatRupees(scenarios[name]?.total?.mid || 0)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style={{ marginTop: 16, fontSize: 12, color: '#64748b' }}>
+              Compare different wedding scales: Minimalist (60%), Modest (80%), Standard (100%), Luxury (140%)
+            </div>
+          </div>
+        )}
 
         <div className="section-card" style={{ border: '2px solid #ffb703' }}>
           <div className="section-title" style={{ color: '#023047' }}>
@@ -1059,50 +1103,6 @@ export default function Tab8Budget() {
             "Print / Save as PDF" includes sub-items and PSO results — works offline.
           </div>
         </div>
-
-        {/* Scenario Comparison */}
-        {scenarios && Object.keys(scenarios).length > 0 && (
-          <div className="section-card">
-            <div className="section-title">Scenario Comparison</div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: '#023047', color: 'white' }}>
-                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700 }}>Category</th>
-                    {Object.keys(scenarios).map(name => (
-                      <th key={name} style={{ padding: '10px', textAlign: 'right', fontWeight: 700 }}>
-                        {name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.keys(scenarios.Minimalist?.items || {}).map(cat => (
-                    <tr key={cat} style={{ background: cat.indexOf('Contingency') !== -1 ? '#f0f7fc' : 'white' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: 600 }}>{cat}</td>
-                      {Object.keys(scenarios).map(name => (
-                        <td key={name} style={{ padding: '8px 10px', textAlign: 'right' }}>
-                          {formatRupees(scenarios[name]?.items?.[cat]?.mid || 0)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                  <tr style={{ background: '#e8f4fa', fontWeight: 800 }}>
-                    <td style={{ padding: '12px 10px', fontSize: 15 }}>Total Budget</td>
-                    {Object.keys(scenarios).map(name => (
-                      <td key={name} style={{ padding: '12px 10px', textAlign: 'right', fontSize: 15, color: '#023047' }}>
-                        {formatRupees(scenarios[name]?.total?.mid || 0)}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div style={{ marginTop: 16, fontSize: 12, color: '#64748b' }}>
-              Compare different wedding scales: Minimalist (60%), Modest (80%), Standard (100%), Luxury (140%)
-            </div>
-          </div>
-        )}
 
       </>)}
 
