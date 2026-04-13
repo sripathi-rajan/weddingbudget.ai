@@ -158,7 +158,7 @@ export default function Tab2Venue() {
                 <label className="form-label">Number of Days / Events</label>
                 <input className="form-input" type="number" min={1} max={30}
                   style={{ maxWidth: 120 }}
-                  value={wedding.num_days ?? 1}
+                  value={wedding.num_days}
                   onChange={e => {
                     const v = e.target.value === '' ? '' : Math.min(30, Math.max(0, parseInt(e.target.value) || 0));
                     update('num_days', v);
