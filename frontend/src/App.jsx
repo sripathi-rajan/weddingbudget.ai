@@ -370,25 +370,7 @@ function TopNav({ activeTab, allTabs, isAdminRole, goTo, isMobile, onOpenGuide }
             {wedding.total_guests} guests
           </span>
         )}
-        <button
-          onClick={onOpenGuide}
-          style={{
-            background: 'rgba(233, 30, 140, 0.1)',
-            color: '#e91e8c',
-            border: '1px solid rgba(233, 30, 140, 0.2)',
-            padding: '4px 12px',
-            borderRadius: 50,
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: 'pointer',
-            marginLeft: 4,
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => e.target.style.background = 'rgba(233, 30, 140, 0.2)'}
-          onMouseLeave={(e) => e.target.style.background = 'rgba(233, 30, 140, 0.1)'}
-        >
-          📖 Guide
-        </button>
+
       </div>
     </nav>
   )

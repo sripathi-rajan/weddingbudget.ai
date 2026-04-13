@@ -658,13 +658,7 @@ export default function LandingPage({ onEnter, onOpenGuide }) {
           </nav>
 
           <div style={S.headerActions}>
-            <button
-              style={{ ...S.btnGhost, color: '#e91e8c', fontWeight: 700 }}
-              onClick={(e) => { e.preventDefault(); onOpenGuide(); }}
-              className="btn-ghost"
-            >
-              📖 Guide
-            </button>
+
             <button
               style={S.btnGhost}
               onClick={(e) => { e.preventDefault(); enter('admin'); }}
