@@ -10,34 +10,39 @@ SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "your-super-secret-key-change-me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
-# Passlib + BCrypt 4.0+ fix (Monkeypatch)
+# Passlib + BCrypt 4.0+ fix (Global Monkeypatch)
 import bcrypt
-from passlib.handlers.bcrypt import _bcrypt
 # Fix for bcrypt 4.0.0+ change in version reporting
 if not hasattr(bcrypt, "__about__"):
     bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})
 
-# Fix for "password cannot be longer than 72 bytes" in passlib's internal bug detection
-# We wrap the hashpw function to manually truncate if it's too long, 
-# which passlib's internal test sometimes triggers.
-original_hashpw = _bcrypt.hashpw
-def patched_hashpw(password, salt):
-    if isinstance(password, str):
-        password = password.encode("utf-8")
-    if len(password) > 72:
-        password = password[:72]
-    return original_hashpw(password, salt)
-_bcrypt.hashpw = patched_hashpw
+# GLOBAL FIX: Force bcrypt to truncate passwords itself
+# This bypasses the Passlib "wrap bug" self-test crash.
+original_bcrypt_hashpw = bcrypt.hashpw
+def patched_bcrypt_hashpw(password, salt):
+    # Ensure password is bytes for length check
+    pw_bytes = password
+    if isinstance(pw_bytes, str):
+        pw_bytes = pw_bytes.encode("utf-8")
+    
+    if len(pw_bytes) > 72:
+        pw_bytes = pw_bytes[:72]
+    return original_bcrypt_hashpw(pw_bytes, salt)
+bcrypt.hashpw = patched_bcrypt_hashpw
+
+from passlib.context import CryptContext
 
 # Configuration for passlib with bcrypt
-# Fixed: BCrypt 4.0+ expects passwords to be truncated to 72 bytes.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# ── CONFIG ──────────────────────────────────────────────────────────────────
+SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "your-super-secret-key-change-me")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 # ── Mock Admin (Usually stored in database but project uses mock for now) ──────
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-# The hash for "admin" (default) or whatever is used.
-# If they have no db user tables, we use a mock.
 ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", pwd_context.hash("admin"))
+
 
 def authenticate_admin(username, password) -> bool:
     """Check if the provided username and password match the admin credentials."""
