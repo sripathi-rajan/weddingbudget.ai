@@ -396,7 +396,7 @@ export default function Tab8Budget() {
       showToast("Please generate your budget estimate first.", "error");
       return;
     }
-    
+
     // Check if essential selections are made
     const errors = [];
     if (!wedding.user_name) errors.push("Your Name");
@@ -404,7 +404,7 @@ export default function Tab8Budget() {
     if (!wedding.wedding_date) errors.push("Wedding Date");
     if (!wedding.total_guests || wedding.total_guests < 1) errors.push("Guest Count");
     if (!wedding.selected_decor?.length) errors.push("Decor Selections from AI Gallery");
-    
+
     if (errors.length > 0) {
       showToast(`Missing details: ${errors.join(", ")}`, "error");
       return;
@@ -415,8 +415,8 @@ export default function Tab8Budget() {
       const response = await fetch(`${API}/budget/finalise`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          total: budget.total, 
+        body: JSON.stringify({
+          total: budget.total,
           wedding_profile: wedding,
           finalized_at: new Date().toISOString()
         })
@@ -430,7 +430,7 @@ export default function Tab8Budget() {
       setFinalised(true);
       setSubmitted(true);
       showToast("Budget finalized and sent to admin successfully!");
-      
+
       localStorage.setItem('wedding_finalized', 'true');
       localStorage.setItem('final_budget_total', budget.total.mid.toString());
 
@@ -909,7 +909,7 @@ export default function Tab8Budget() {
             </table>
           </div>
         </div>
-        
+
         {/* Scenario Comparison */}
         {scenarios && Object.keys(scenarios).length > 0 && (
           <div className="section-card">
