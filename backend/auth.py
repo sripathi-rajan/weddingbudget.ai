@@ -41,7 +41,7 @@ ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 # ── Mock Admin (Usually stored in database but project uses mock for now) ──────
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", pwd_context.hash("admin"))
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", pwd_context.hash("shaadi@admin2026"))
 
 
 def authenticate_admin(username, password) -> bool:
