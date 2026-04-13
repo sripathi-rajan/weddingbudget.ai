@@ -12,8 +12,22 @@ ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 # Passlib + BCrypt 4.0+ fix (Monkeypatch)
 import bcrypt
+from passlib.handlers.bcrypt import _bcrypt
+# Fix for bcrypt 4.0.0+ change in version reporting
 if not hasattr(bcrypt, "__about__"):
     bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})
+
+# Fix for "password cannot be longer than 72 bytes" in passlib's internal bug detection
+# We wrap the hashpw function to manually truncate if it's too long, 
+# which passlib's internal test sometimes triggers.
+original_hashpw = _bcrypt.hashpw
+def patched_hashpw(password, salt):
+    if isinstance(password, str):
+        password = password.encode("utf-8")
+    if len(password) > 72:
+        password = password[:72]
+    return original_hashpw(password, salt)
+_bcrypt.hashpw = patched_hashpw
 
 # Configuration for passlib with bcrypt
 # Fixed: BCrypt 4.0+ expects passwords to be truncated to 72 bytes.
