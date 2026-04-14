@@ -15,6 +15,7 @@ class LeadCreate(BaseModel):
     phone: Optional[str] = None
     wedding_date: Optional[str] = None
     budget: Optional[float] = None
+    notes: Optional[str] = None
     source: Optional[str] = "Wizard"
 
 class LeadUpdate(BaseModel):
@@ -32,7 +33,7 @@ class LeadOut(LeadCreate):
     last_contacted_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 @router.get("/leads", response_model=List[LeadOut])
 def get_leads(db: Session = Depends(get_db), _admin=Depends(require_admin)):
@@ -40,7 +41,7 @@ def get_leads(db: Session = Depends(get_db), _admin=Depends(require_admin)):
 
 @router.post("/leads", response_model=LeadOut)
 def create_lead(lead: LeadCreate, db: Session = Depends(get_db)):
-    db_lead = CRMLead(**lead.model_dump())
+    db_lead = CRMLead(**lead.dict())
     db.add(db_lead)
     db.commit()
     db.refresh(db_lead)
@@ -52,7 +53,7 @@ def update_lead(lead_id: int, lead_update: LeadUpdate, db: Session = Depends(get
     if not db_lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    update_data = lead_update.model_dump(exclude_unset=True)
+    update_data = lead_update.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_lead, key, value)
     

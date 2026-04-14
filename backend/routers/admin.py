@@ -128,7 +128,7 @@ def get_artists(db: Session = Depends(get_db)):
 
 @router.post("/artists", dependencies=[Depends(require_admin)])
 def add_artist(artist: ArtistIn, db: Session = Depends(get_db)):
-    row = Artist(**artist.model_dump())
+    row = Artist(**artist.dict())
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -146,9 +146,9 @@ def update_artist(artist_id: int, artist: ArtistIn, db: Session = Depends(get_db
         table_name="artists", record_id=artist_id,
         old_value=json.dumps({"name": row.name, "type": row.type,
                                "min_fee": row.min_fee, "max_fee": row.max_fee}),
-        new_value=json.dumps(artist.model_dump()),
+        new_value=json.dumps(artist.dict()),
     ))
-    for k, v in artist.model_dump().items():
+    for k, v in artist.dict().items():
         setattr(row, k, v)
     db.commit()
     db.refresh(row)
@@ -180,7 +180,7 @@ def get_fb_rates(db: Session = Depends(get_db)):
 @router.put("/fb-rates", dependencies=[Depends(require_admin)])
 def update_fb_rates(rates: FBRates, db: Session = Depends(get_db)):
     db.execute(delete(FBRate))
-    for meal_type, tiers in rates.model_dump().items():
+    for meal_type, tiers in rates.dict().items():
         for tier, occasions in tiers.items():
             for occasion, cost in occasions.items():
                 db.add(FBRate(meal_type=meal_type, tier=tier, occasion=occasion, per_head_cost=cost))
@@ -246,7 +246,7 @@ def update_contingency(data: ContingencySettings, db: Session = Depends(get_db))
         else:
             db.add(AdminSetting(key=key, value=str(value)))
     db.commit()
-    return {**data.model_dump(), "updated_at": datetime.utcnow().isoformat() + "Z"}
+    return {**data.dict(), "updated_at": datetime.utcnow().isoformat() + "Z"}
 
 
 # ── Decor Images (Management) ──────────────────────────────────────────────────
@@ -306,7 +306,7 @@ def get_budget_rules():
 @router.put("/budget-rules", dependencies=[Depends(require_admin)])
 def update_budget_rules(rules: BudgetRules):
     with open(RULES_JSON, "w", encoding="utf-8") as f:
-        json.dump(rules.model_dump(), f, indent=2)
+        json.dump(rules.dict(), f, indent=2)
     return {"ok": True}
 
 
