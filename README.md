@@ -10,7 +10,7 @@
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 ### 🧠 Intelligent Budget Orchestration
 - **AI Decor Predictor**: Uses computer vision (MobileNetV2) and custom ML models to predict decor costs based on complexity and style.

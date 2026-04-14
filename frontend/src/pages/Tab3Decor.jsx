@@ -1,351 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useWedding, formatRupees } from '../context/WeddingContext'
-import { scrollToNextSection } from '../utils/scrollToNext'
-
+import PremiumDecorLibrary from '../components/tabs/PremiumDecorLibrary'
 import { API_BASE as API } from '../utils/config'
-
-const DECOR_LIBRARY = [
-  { id:1,  imageUrl:'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80', emoji:'🌸', name:'Floral Arch Mandap',       style:'Romantic',    complexity:'High',   base_cost:200000, function_type:'Mandap' },
-  { id:2,  imageUrl:'https://images.unsplash.com/photo-1478146059778-26028b07395a?w=400&q=80', emoji:'🕯️', name:'Candle Centerpieces',       style:'Minimalist',  complexity:'Low',    base_cost:40000,  function_type:'Table Decor' },
-  { id:3,  imageUrl:'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400&q=80', emoji:'🌺', name:'Marigold Garland Entrance', style:'Traditional', complexity:'Medium', base_cost:50000,  function_type:'Entrance' },
-  { id:4,  imageUrl:'https://images.unsplash.com/photo-1501283070011-f6bc0016cd30?w=400&q=80', emoji:'✨', name:'LED Fairy Light Ceiling',   style:'Modern',      complexity:'High',   base_cost:130000, function_type:'Ceiling' },
-  { id:5,  imageUrl:'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400&q=80', emoji:'🌿', name:'Tropical Leaf Backdrop',    style:'Boho',        complexity:'Medium', base_cost:70000,  function_type:'Backdrop' },
-  { id:6,  imageUrl:'https://images.unsplash.com/photo-1561912774-79769a0a0a7a?w=400&q=80', emoji:'🦋', name:'Floral Stage Decor',        style:'Whimsical',   complexity:'High',   base_cost:250000, function_type:'Stage' },
-  { id:7,  imageUrl:'https://images.unsplash.com/photo-1563170351-be4f2d5f5781?w=400&q=80', emoji:'🪔', name:'Diya Pathway Lighting',     style:'Traditional', complexity:'Low',    base_cost:25000,  function_type:'Lighting' },
-  { id:8,  imageUrl:'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&q=80', emoji:'🌙', name:'Moon Gate Photo Booth',     style:'Modern',      complexity:'Medium', base_cost:60000,  function_type:'Photo Booth' },
-  { id:9,  imageUrl:'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=400&q=80', emoji:'🌹', name:'Rose Petal Aisle',          style:'Romantic',    complexity:'Low',    base_cost:20000,  function_type:'Aisle' },
-  { id:10, imageUrl:'https://images.unsplash.com/photo-1566737236500-c8ac43014a8e?w=400&q=80', emoji:'🏛️', name:'Royal Pillar Draping',      style:'Luxury',      complexity:'High',   base_cost:300000, function_type:'Pillars' },
-  { id:11, imageUrl:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80', emoji:'🌼', name:'Rustic Farm Table',         style:'Rustic',      complexity:'Medium', base_cost:52000,  function_type:'Table Decor' },
-  { id:12, imageUrl:'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80', emoji:'🎊', name:'Confetti & Balloon Arch',   style:'Playful',     complexity:'Low',    base_cost:32000,  function_type:'Ceiling' },
-  { id:13, imageUrl:'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&q=80', emoji:'👑', name:'Palace Chandelier Setup',   style:'Luxury',      complexity:'High',   base_cost:450000, function_type:'Ceiling' },
-  { id:14, imageUrl:'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&q=80', emoji:'🌙', name:'Mehendi Decor Setup',       style:'Traditional', complexity:'Medium', base_cost:85000,  function_type:'Backdrop' },
-  { id:15, imageUrl:'https://images.unsplash.com/photo-1595407753234-0882f1e77954?w=400&q=80', emoji:'💛', name:'Haldi Theme Decor',         style:'Playful',     complexity:'Low',    base_cost:35000,  function_type:'Entrance' },
-  { id:16, imageUrl:'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80', emoji:'🎵', name:'Sangeet Stage Lights',      style:'Modern',      complexity:'High',   base_cost:180000, function_type:'Stage' },
-]
-
-const COMPLEXITY_COLOR = { Low:'#059669', Medium:'#D97706', High:'#fb8500' }
-const STYLE_COLOR = {
-  Romantic:'#fb8500', Minimalist:'#475569', Traditional:'#C2410C', Modern:'#1D4ED8',
-  Boho:'#65A30D', Whimsical:'#219ebc', Luxury:'#B45309', Rustic:'#78350F', Playful:'#0369A1'
-}
-
-function localPredict(item) {
-  const baseRates = {
-    'Mandap': 250000, 'Entrance': 60000, 'Table Decor': 45000, 'Ceiling': 120000,
-    'Backdrop': 85000, 'Stage': 300000, 'Lighting': 40000, 'Photo Booth': 65000,
-    'Aisle': 30000, 'Pillars': 350000
-  }
-  const base = baseRates[item.function_type] || item.base_cost || 75000
-  const mult = { Low: 0.7, Medium: 1.0, High: 1.6 }[item.complexity] || 1
-  const sm = { Luxury: 1.5, Traditional: 1.1, Modern: 1.2, Romantic: 1.1, Boho: 0.9, Minimalist: 0.75, Whimsical: 1.1, Rustic: 0.85, Playful: 0.8 }[item.style] || 1
-  const p = Math.round(base * mult * sm)
-  return { predicted: p, low: Math.round(p * 0.85), high: Math.round(p * 1.2) }
-}
-
-function DecorCard({ item, isSel, onToggle, hasAnySelected }) {
-  const [imgErr, setImgErr] = useState(false)
-  const p = localPredict(item)
-  const fallback = '#7C3AED'
-  const defaultImageUrl = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
-  const cx = COMPLEXITY_COLOR[item.complexity] || '#6b7280'
-  const sx = STYLE_COLOR[item.style] || '#6b7280'
-  return (
-    <div
-      onClick={() => onToggle(item)}
-      className={`sel-card${isSel ? ' selected' : ''}${hasAnySelected && !isSel ? ' dimmed' : ''}`}
-      style={{
-        border: isSel ? '2px solid #C9A84C' : '2px solid #e5e7eb',
-        borderRadius: 12,
-        overflow: 'hidden',
-        background: '#fff',
-        boxShadow: isSel ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-        transition: 'all 0.2s ease',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div style={{ position: 'relative', background: fallback, lineHeight: 0, overflow: 'hidden' }}>
-        {item.imageUrl && !imgErr ? (
-          <img
-            src={item.imageUrl}
-            alt=""
-            onError={() => setImgErr(true)}
-            style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
-          />
-        ) : (
-          <img
-            src={defaultImageUrl}
-            alt={item.name || item.function_type || 'Decor inspiration'}
-            style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
-          />
-        )}
-        <div style={{
-          position:'absolute', top:10, right:10, width:26, height:26,
-          background:'#C9A84C', borderRadius:'50%',
-          alignItems:'center', justifyContent:'center', color:'#111', fontWeight:'bold', fontSize:13,
-          boxShadow:'0 2px 8px rgba(0,0,0,0.35)',
-          display: isSel ? 'flex' : 'none',
-          animation: isSel ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
-        }}>✓</div>
-      </div>
-      <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, lineHeight: 1.3, color: '#111' }}>{item.name}</div>
-        <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
-          <span style={{ fontSize:10, padding:'3px 9px', borderRadius:10, fontWeight:700,
-            background: cx + '22', color: cx }}>
-            {item.complexity}
-          </span>
-          <span style={{ fontSize:10, padding:'3px 9px', borderRadius:10, fontWeight:700,
-            background: sx + '22', color: sx }}>
-            {item.style}
-          </span>
-        </div>
-        <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color:'#023047' }}>
-          {formatRupees(p.predicted)}
-        </div>
-        <div style={{ fontSize:12, color:'#6b7280', marginTop:2 }}>
-          {formatRupees(p.low)} – {formatRupees(p.high)}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Decor Inspiration Library constants ───────────────────────────────────────
-const FT_OPTIONS = ['Mandap','Entrance','Table Decor','Ceiling','Backdrop','Stage','Lighting','Photo Booth','Aisle','Pillars']
-const STYLE_OPTIONS = ['Romantic','Traditional','Modern','Luxury','Minimalist','Boho','Whimsical','Rustic','Playful']
-
-const FT_COLOR = {
-  Mandap:'#7C3AED', Entrance:'#059669', 'Table Decor':'#D97706', Ceiling:'#0284C7',
-  Backdrop:'#DB2777', Stage:'#DC2626', Lighting:'#F59E0B', 'Photo Booth':'#7C3AED',
-  Aisle:'#059669', Pillars:'#6B7280'
-}
-
-const RULE_RANGES = {1:[30000,80000],2:[80000,200000],3:[200000,500000],4:[500000,1000000],5:[1000000,2500000]}
-
-function placeholderCards() {
-  return [
-    {id:'ph1',function_type:'Mandap',style:'Romantic',complexity:4,predicted_low:500000,predicted_mid:750000,predicted_high:1000000,method:'rule-based',url:null,filename:'Mandap Decor'},
-    {id:'ph2',function_type:'Entrance',style:'Traditional',complexity:2,predicted_low:80000,predicted_mid:140000,predicted_high:200000,method:'rule-based',url:null,filename:'Entrance Decor'},
-    {id:'ph3',function_type:'Stage',style:'Modern',complexity:3,predicted_low:200000,predicted_mid:350000,predicted_high:500000,method:'rule-based',url:null,filename:'Stage Decor'},
-    {id:'ph4',function_type:'Ceiling',style:'Luxury',complexity:4,predicted_low:500000,predicted_mid:750000,predicted_high:1000000,method:'rule-based',url:null,filename:'Ceiling Decor'},
-    {id:'ph5',function_type:'Backdrop',style:'Boho',complexity:2,predicted_low:80000,predicted_mid:140000,predicted_high:200000,method:'rule-based',url:null,filename:'Backdrop Decor'},
-    {id:'ph6',function_type:'Table Decor',style:'Minimalist',complexity:1,predicted_low:30000,predicted_mid:55000,predicted_high:80000,method:'rule-based',url:null,filename:'Table Decor'},
-  ]
-}
-
-function LibraryCard({ item, isLibSel, onToggle }) {
-  const [imgErr, setImgErr] = useState(false)
-  const ftColor = FT_COLOR[item.function_type] || '#6B7280'
-  return (
-    <div
-      onClick={() => onToggle(item)}
-      style={{
-        borderRadius:14, overflow:'hidden', cursor:'pointer', position:'relative',
-        border:`2px solid ${isLibSel ? '#023047' : 'var(--border)'}`,
-        background: isLibSel ? '#EFF6FF' : 'white',
-        boxShadow: isLibSel ? '0 4px 20px rgba(2,48,71,0.18)' : '0 2px 8px rgba(0,0,0,0.05)',
-        transition:'all 0.18s',
-        breakInside:'avoid', marginBottom:16,
-      }}
-    >
-      <img
-        src={`${API.replace('/api','')}/decor-images/${item.filename}`}
-        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80' }}
-        style={{width:'100%', height:140, objectFit:'cover', borderRadius:8}}
-      />
-      <div style={{ padding:'10px 12px 12px' }}>
-        <div style={{ fontSize:11, fontWeight:700, marginBottom:6, display:'flex', gap:5, flexWrap:'wrap' }}>
-          <span style={{ padding:'2px 8px', borderRadius:8, background:ftColor+'22', color:ftColor }}>
-            {item.function_type}
-          </span>
-          {item.style && (
-            <span style={{ padding:'2px 8px', borderRadius:8, background:'#F3F4F6', color:'#374151' }}>
-              {item.style}
-            </span>
-          )}
-        </div>
-        <div style={{ fontSize:11, color:'var(--muted)', marginBottom:6 }}>
-          {item.filename?.replace(/\.[^.]+$/, '').replace(/_/g, ' ')}
-        </div>
-        <div style={{ fontFamily:'EB Garamond,serif', fontSize:18, fontWeight:700, color:'var(--primary)' }}>
-          {formatRupees(item.predicted_mid)}
-        </div>
-        <div style={{ fontSize:11, color:'var(--muted)' }}>
-          {formatRupees(item.predicted_low)} – {formatRupees(item.predicted_high)}
-        </div>
-      </div>
-      {isLibSel && (
-        <div style={{
-          position:'absolute', top:8, right:8, width:24, height:24,
-          background:'#023047', borderRadius:'50%', display:'flex',
-          alignItems:'center', justifyContent:'center', color:'white', fontSize:12, fontWeight:'bold'
-        }}></div>
-      )}
-    </div>
-  )
-}
-
-function DecorLibrarySection() {
-  const { updateDecorSelections } = useWedding()
-  const [items, setItems] = useState([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(false)
-  const [ftFilter, setFtFilter] = useState('')
-  const [styleFilter, setStyleFilter] = useState('')
-  const [labelledOnly, setLabelledOnly] = useState(false)
-  const [libSelected, setLibSelected] = useState([])
-  const [apiError, setApiError] = useState(false)
-  const [showLibSuccess, setShowLibSuccess] = useState(false)
-
-  const fetchItems = useCallback(async (pg, append = false) => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({ page: pg, limit: 20 })
-      if (ftFilter) params.set('function_type', ftFilter)
-      if (styleFilter) params.set('style', styleFilter)
-      if (labelledOnly) params.set('is_labelled', 'true')
-      const res = await fetch(`${API}/decor/library?${params}`)
-      if (!res.ok) throw new Error('API error')
-      const data = await res.json()
-      setItems(prev => append ? [...prev, ...data.items] : data.items)
-      setTotal(data.total)
-      setHasMore(pg * 20 < data.total)
-      setApiError(false)
-    } catch {
-      if (!append) { setItems(placeholderCards()); setApiError(true) }
-    }
-    setLoading(false)
-  }, [ftFilter, styleFilter, labelledOnly])
-
-  useEffect(() => { setPage(1); fetchItems(1, false) }, [ftFilter, styleFilter, labelledOnly])
-
-  const toggleLib = (item) => {
-    setLibSelected(prev => {
-      const exists = prev.find(s => s.id === item.id)
-      const next = exists ? prev.filter(s => s.id !== item.id) : [...prev, item]
-      return next
-    })
-  }
-
-  const libTotal = libSelected.reduce((s, i) => s + (i.predicted_mid || 0), 0)
-  const libLow = libSelected.reduce((s, i) => s + (i.predicted_low || 0), 0)
-  const libHigh = libSelected.reduce((s, i) => s + (i.predicted_high || 0), 0)
-
-  const addToBudget = () => {
-    updateDecorSelections(libSelected.map(s => s.id), libTotal)
-    setShowLibSuccess(true)
-    setTimeout(() => setShowLibSuccess(false), 3000)
-  }
-
-  return (
-    <div className="section-card" style={{ marginTop:24 }}>
-      <div className="section-title"> Decor Inspiration Library <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
-
-      {/* Filter bar */}
-      <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:16, alignItems:'center' }}>
-        <select value={ftFilter} onChange={e => setFtFilter(e.target.value)}
-          className="form-select" style={{ minWidth:120, width: 'auto', maxWidth: '100%', fontSize:12, flex: '1 1 auto' }}>
-          <option value="">All Types</option>
-          {FT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
-        </select>
-        <select value={styleFilter} onChange={e => setStyleFilter(e.target.value)}
-          className="form-select" style={{ minWidth:120, width: 'auto', maxWidth: '100%', fontSize:12, flex: '1 1 auto' }}>
-          <option value="">All Styles</option>
-          {STYLE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600,
-          color:'var(--muted)', cursor:'pointer', whiteSpace: 'nowrap' }}>
-          <input type="checkbox" checked={labelledOnly} onChange={e => setLabelledOnly(e.target.checked)} />
-          Labelled only
-        </label>
-        {(ftFilter || styleFilter || labelledOnly) && (
-          <button onClick={() => { setFtFilter(''); setStyleFilter(''); setLabelledOnly(false) }}
-            style={{ fontSize:11, padding:'4px 10px', borderRadius:8, border:'none',
-              background:'#F3F4F6', color:'#374151', cursor:'pointer' }}>Clear</button>
-        )}
-      </div>
-
-      {/* Masonry grid */}
-      <div>
-        <style>{`
-          .decor-lib-grid { column-count: 3; column-gap: 16px; }
-          @media(max-width: 768px){ .decor-lib-grid{ column-count: 2 !important } }
-          @media(max-width: 640px){ .decor-lib-grid{ column-count: 1 !important } }
-        `}</style>
-        <div className="decor-lib-grid">
-          {items.map(item => (
-            <LibraryCard key={item.id}
-              item={item}
-              isLibSel={!!libSelected.find(s => s.id === item.id)}
-              onToggle={toggleLib} />
-          ))}
-          {loading && Array.from({length:3}).map((_,i) => (
-            <div key={`sk${i}`} style={{ height:220, borderRadius:14, background:'#F3F4F6',
-              marginBottom:16, breakInside:'avoid', animation:'pulse 1.5s ease-in-out infinite' }} />
-          ))}
-        </div>
-      </div>
-
-      {/* Load More */}
-      {hasMore && !loading && (
-        <div style={{ textAlign:'center', marginTop:8 }}>
-          <button onClick={() => { const next = page + 1; setPage(next); fetchItems(next, true) }}
-            style={{ padding:'10px 28px', borderRadius:10, border:'1.5px solid var(--border)',
-              background:'white', fontWeight:600, fontSize:13, cursor:'pointer' }}>
-            Load More ({total - items.length} remaining)
-          </button>
-        </div>
-      )}
-
-      {/* Sticky bottom bar */}
-      {libSelected.length > 0 && (
-        <div style={{
-          position:'sticky', bottom: 'calc(1.5rem + 60px)', zIndex:40, marginTop:16,
-          background:'linear-gradient(135deg,#023047,#04699b)',
-          borderRadius:16, padding:'14px 20px',
-          display:'flex', justifyContent:'space-between', alignItems:'center',
-          flexWrap: 'wrap',
-          gap: 10,
-          boxShadow:'0 8px 32px rgba(2,48,71,0.3)'
-        }}>
-          <div style={{ color:'white', flex: '1 1 auto' }}>
-            <div style={{ fontWeight:700, fontSize:14 }}>
-              {libSelected.length} design{libSelected.length > 1 ? 's' : ''} shortlisted
-            </div>
-            <div style={{ fontSize:12, opacity:0.8, marginTop:2 }}>
-              Est. {formatRupees(libLow)} – {formatRupees(libHigh)}
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap: 'wrap' }}>
-            <div style={{ fontFamily:'EB Garamond,serif', fontSize:22, fontWeight:800, color:'#FDE68A' }}>
-              {formatRupees(libTotal)}
-            </div>
-            <button onClick={addToBudget} disabled={showLibSuccess} style={{
-              padding:'10px 20px', borderRadius:10, border:'none',
-              background: showLibSuccess ? '#059669' : '#FFB703', 
-              color: showLibSuccess ? 'white' : '#023047',
-              fontWeight:700, fontSize:13, cursor: showLibSuccess ? 'default' : 'pointer',
-              minHeight: 44,
-              transition: 'all 0.2s'
-            }}>
-              {showLibSuccess ? '✓ Added!' : 'Confirm & Add to Budget'}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function Tab3Decor() {
   const { wedding, update, updateDecorSelections } = useWedding()
-  const [selected, setSelected] = useState([])
-  const [filter, setFilter] = useState('')
   const [uploadTag, setUploadTag] = useState({ function_type: '', style: '', complexity: '' })
   const [uploadedFile, setUploadedFile] = useState(null)
   const [prediction, setPrediction] = useState(null)
@@ -355,47 +15,11 @@ export default function Tab3Decor() {
   const [showAiSuccess, setShowAiSuccess] = useState(false)
   const [hasAddedPrediction, setHasAddedPrediction] = useState(false)
 
-  // Sync with context on mount
-  useEffect(() => {
-    if (wedding.decor_selections?.length > 0) {
-      const fromLib = DECOR_LIBRARY.filter(d => wedding.decor_selections.includes(d.id))
-        .map(d => ({ ...d, ...localPredict(d) }))
-      
-      const aiItems = wedding.decor_selections
-        .filter(id => typeof id === 'string' && id.startsWith('ai-pred-'))
-        .map(id => {
-            const data = JSON.parse(id.replace('ai-pred-', ''))
-            return {
-                id,
-                name: `AI: ${data.name || 'Custom Decor'}`,
-                predicted: data.cost,
-                low: Math.round(data.cost * 0.85),
-                high: Math.round(data.cost * 1.2),
-                emoji: '✨',
-                isAi: true
-            }
-        })
-
-      setSelected([...fromLib, ...aiItems])
-    }
-  }, [])
-
-  const toggleItem = (item) => {
-    const exists = selected.find(s => s.id === item.id)
-    let next
-    if (exists) next = selected.filter(s => s.id !== item.id)
-    else { const p = localPredict(item); next = [...selected, { ...item, ...p }] }
-    setSelected(next)
-    update('decor_total', next.reduce((s,i) => s + i.predicted, 0))
-    update('selected_decor', next.map(s => s.name))
-    // if (!exists) scrollToNextSection('decor-upload', 420) // Removed auto-scroll for multi-select field
-  }
-
   const handlePredict = async () => {
     if (!uploadedFile) return
     if (!uploadTag.function_type || !uploadTag.style || !uploadTag.complexity) {
-        setImgRelevanceWarn('Please select Type, Style and Complexity first.')
-        return
+      setImgRelevanceWarn('Please select Type, Style and Complexity first.')
+      return
     }
     setImgRelevanceWarn('')
     setPredicting(true)
@@ -428,15 +52,15 @@ export default function Tab3Decor() {
       const mid = d.predicted_mid ?? d.predicted_cost
       setPrediction({
         predicted_cost: mid,
-        range:          [d.predicted_low ?? Math.round(mid * 0.8), d.predicted_high ?? Math.round(mid * 1.25)],
-        confidence:     d.confidence,
-        similar_items:  [],
+        range: [d.predicted_low || Math.round(mid * 0.8), d.predicted_high || Math.round(mid * 1.25)],
+        confidence: d.confidence,
+        similar_items: [],
         source: d.method === 'ml' ? 'Gradient Boosting AI' : 'Rule-based',
         message: d.message,
         detected_category: d.detected_category
       })
     } catch (err) {
-      // Sophisticated Fallback (2024-26 Market Rates)
+      // Fallback logic
       const baseRates = {
         Mandap: 250000, Entrance: 65000, 'Table Decor': 45000, Ceiling: 120000,
         Backdrop: 85000, Stage: 350000, Lighting: 45000, 'Photo Booth': 70000,
@@ -444,362 +68,181 @@ export default function Tab3Decor() {
       }
       const b = baseRates[uploadTag.function_type] || 85000
       const mult = { Low: 0.65, Medium: 1.0, High: 1.75 }[uploadTag.complexity] || 1
-      const sm = { 
-        Luxury: 1.6, Whimsical: 1.25, Romantic: 1.15, Modern: 1.1, 
-        Rustic: 0.85, Minimalist: 0.7, Traditional: 1.0, Boho: 0.9, Playful: 0.8 
+      const sm = {
+        Luxury: 1.6, Whimsical: 1.25, Romantic: 1.15, Modern: 1.1,
+        Rustic: 0.85, Minimalist: 0.7, Traditional: 1.0, Boho: 0.9, Playful: 0.8
       }[uploadTag.style] || 1
-      
       const pred = Math.round(b * mult * sm * (0.95 + Math.random() * 0.1))
-      setImgRelevanceWarn(null)
       setPrediction({
         predicted_cost: pred,
         range: [Math.round(pred * 0.85), Math.round(pred * 1.25)],
-        confidence: 0.72 + Math.random() * 0.1,
-        similar_items: DECOR_LIBRARY.filter(d => d.style === uploadTag.style || d.function_type === uploadTag.function_type).slice(0, 3),
+        confidence: 0.72,
         source: 'AI Logic (Regional Fallback)',
-        message: 'Prediction based on active market trends and selected attributes.'
+        message: 'Prediction based on regional market trends.'
       })
     }
     setPredicting(false)
     setPredStep('')
   }
 
-  const filtered = filter ? DECOR_LIBRARY.filter(d => d.style===filter || d.complexity===filter) : DECOR_LIBRARY
-  const totalDecor = selected.reduce((s,i) => s + i.predicted, 0)
+  const addToBudget = () => {
+    if (!prediction) return
+    const aiId = `ai-pred-${JSON.stringify({
+      cost: prediction.predicted_cost,
+      name: uploadTag.function_type
+    })}`
+
+    const selections = wedding.decor_selections || []
+    if (!selections.includes(aiId)) {
+      const nextIds = [...selections, aiId]
+      const nextNames = [...(wedding.selected_decor || []), `AI: ${uploadTag.function_type}`]
+      const total = (wedding.decor_total || 0) + prediction.predicted_cost
+
+      updateDecorSelections(nextIds, total)
+      update('selected_decor', nextNames)
+    }
+    setHasAddedPrediction(true)
+    setShowAiSuccess(true)
+  }
 
   return (
-    <div>
-      {/* Gallery */}
-      <div className="section-card" data-section="decor-upload">
-        <div className="section-title"> Decor Gallery <span style={{color: '#E01A22'}}>*</span></div>
-
-        {/* Filter pills */}
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:20 }}>
-          {['','Romantic','Traditional','Modern','Luxury','Minimalist','Boho','Low','Medium','High'].map(f=>(
-            <button key={f} onClick={()=>setFilter(f)} style={{
-              padding:'5px 14px', borderRadius:20, border:'none', cursor:'pointer',
-              fontSize:12, fontWeight:700, transition:'all 0.2s',
-              background: filter===f ? 'var(--primary)' : 'var(--primary-light)',
-              color: filter===f ? 'white' : 'var(--primary-dark)',
-              boxShadow: filter===f ? '0 3px 10px rgba(255,183,3,0.35)' : 'none'
-            }}>{f||'All'}</button>
-          ))}
-        </div>
-
+    <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 12px' }}>
+      {/* Shortlist Summary */}
+      {wedding.decor_selections?.length > 0 && (
         <div style={{
-          display:'grid',
-          gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))',
-          gap:16
+          background: '#fff', borderRadius: 24, padding: '24px',
+          marginBottom: 30, border: '1px solid #f0f0f0', boxShadow: '0 10px 40px rgba(0,0,0,0.03)'
         }}>
-          {filtered.map(item => (
-            <DecorCard
-              key={item.id}
-              item={item}
-              isSel={!!selected.find(s=>s.id===item.id)}
-              hasAnySelected={selected.length > 0 && !selected.find(s=>s.id===item.id)}
-              onToggle={toggleItem}
-            />
-          ))}
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#1B1F23', marginBottom: 16 }}>Selected Decor Shortlist</div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
+            {(wedding.selected_decor || []).map((name, i) => (
+              <span key={i} style={{
+                padding: '8px 16px', borderRadius: 30, background: '#F8FAFC',
+                color: '#475569', fontSize: 13, fontWeight: 700, border: '1px solid #E2E8F0'
+              }}>
+                {name}
+              </span>
+            ))}
+          </div>
+          <div style={{
+            background: 'linear-gradient(135deg, #F77C83, #F9A8D4)', borderRadius: 20,
+            padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff'
+          }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, opacity: 0.9 }}>Total Estimated Decor Budget</div>
+              <div style={{ fontSize: 32, fontWeight: 800 }}>{formatRupees(wedding.decor_total)}</div>
+            </div>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('weddingNextTab'))}
+              style={{ padding: '12px 30px', borderRadius: 14, border: 'none', background: '#fff', color: '#F77C83', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
+              Confirm Selections
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* AI Predictor */}
-      <div className="section-card" data-section="decor-style" style={{ border:'2px solid var(--secondary)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-          <div style={{ width:42, height:42, borderRadius:12, background:'linear-gradient(135deg,var(--secondary),#7a5900)',
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}></div>
-          <div className="section-title" style={{ color:'#7a5900', marginBottom:0 }}>AI Cost Predictor</div>
+      {/* Primary Gallery Section */}
+      <section style={{ marginBottom: 60 }}>
+        <PremiumDecorLibrary />
+      </section>
+
+      {/* AI Assistant Section */}
+      <section style={{
+        background: '#F8FAFC', borderRadius: 32, padding: '40px',
+        border: '2px dashed #E2E8F0', position: 'relative'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginBottom: 30 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🤖</div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1B1F23' }}>AI Visual Cost Predictor</h2>
+            <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>Upload any decor image from Pinterest or Instagram for an instant budget estimate</p>
+          </div>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:14, margin:'0 0 20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 30 }}>
           {[
-            { key:'function_type', label:'Function Type',
-              opts:['Mandap','Entrance','Table Decor','Ceiling','Backdrop','Stage','Lighting','Photo Booth','Aisle','Pillars'] },
-            { key:'style', label:'Style',
-              opts:['Romantic','Traditional','Modern','Luxury','Minimalist','Boho','Whimsical','Rustic','Playful'] },
-            { key:'complexity', label:'Complexity', opts:['Low','Medium','High'] }
-          ].map(({key,label,opts})=>(
-            <div key={key}>
-              <label className="form-label">{label}</label>
-              <select className="form-select" value={uploadTag[key]}
-                onChange={e=>setUploadTag(p=>({...p,[key]:e.target.value}))}>
-                <option value="">Select {label}...</option>
-                {opts.map(o=><option key={o} value={o}>{o}</option>)}
+            { key: 'function_type', label: 'Decor Category', opts: ['Mandap', 'Entrance', 'Stage', 'Ceiling', 'Backdrop', 'Table Decor', 'Lighting', 'Photo Booth'] },
+            { key: 'style', label: 'Design Style', opts: ['Traditional', 'Modern', 'Luxury', 'Romantic', 'Minimalist', 'Boho', 'Rustic'] },
+            { key: 'complexity', label: 'Complexity Level', opts: ['Low', 'Medium', 'High'] }
+          ].map(field => (
+            <div key={field.key}>
+              <label style={{ fontSize: 12, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 10, display: 'block' }}>{field.label}</label>
+              <select
+                style={{ width: '100%', padding: '14px 20px', borderRadius: 16, border: '1px solid #E2E8F0', background: '#fff', fontSize: 14, fontWeight: 600 }}
+                value={uploadTag[field.key]}
+                onChange={e => setUploadTag(prev => ({ ...prev, [field.key]: e.target.value }))}
+              >
+                <option value="">Select {field.label}...</option>
+                {field.opts.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
           ))}
         </div>
 
-        {/* Drop Zone */}
-        <div style={{ border:`2px dashed ${uploadedFile ? '#059669' : 'var(--secondary)'}`, borderRadius:14, padding:'28px 20px',
-          textAlign:'center', background: uploadedFile ? '#f0fdf4' : 'var(--secondary-light)', marginBottom:18, cursor:'pointer',
-          transition:'all 0.2s' }}
-          onClick={()=>document.getElementById('decor-upload').click()}>
-          <div style={{ fontSize:44 }}>{uploadedFile ? '' : ''}</div>
-          <div style={{ fontWeight:700, color: uploadedFile ? '#047857' : '#7a5900', marginTop:6 }}>
-            {uploadedFile ? uploadedFile.name : 'Drop your decor image here'}
-          </div>
-          <div style={{ fontSize:12, color:'var(--muted)', marginTop:4 }}>
-            {uploadedFile ? 'Click to change image' : 'PNG, JPG — AI extracts features and predicts cost'}
-          </div>
-          <input id="decor-upload" type="file" accept="image/*" style={{ display:'none' }}
-            onChange={e => {
-              if (e.target.files?.[0]) {
-                setUploadedFile(e.target.files[0])
-                setPrediction(null)
-                setImgRelevanceWarn('')
-              }
-            }} />
-        </div>
-
-        {imgRelevanceWarn && (
-          <div style={{ marginBottom:14, padding:'12px 16px', background:'#FEF2F2', borderRadius:10,
-            border:'1.5px solid #FCA5A5', fontSize:13, color:'#DC2626', fontWeight:600 }}>
-            {imgRelevanceWarn}
-          </div>
-        )}
-
-        <button onClick={handlePredict} disabled={predicting || !uploadedFile} style={{
-          width:'100%', padding:'14px', borderRadius:12, border:'none',
-          cursor: predicting || !uploadedFile ? 'not-allowed' : 'pointer',
-          background: !uploadedFile ? '#D1D5DB' : predicting ? '#F9A8D4' : 'linear-gradient(135deg,var(--secondary),#7a5900)',
-          color: !uploadedFile ? '#9CA3AF' : 'white', fontWeight:700, fontSize:15, transition:'all 0.2s'
-        }}>
-          {predicting ? ' AI Processing...' : !uploadedFile ? ' Upload an image to predict' : ' Predict Cost with AI'}
-        </button>
-
-        {predicting && predStep && (
-          <div style={{ marginTop:14, padding:'12px 16px', background:'var(--secondary-light)', borderRadius:10 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:16, height:16, borderRadius:'50%', border:'2.5px solid var(--secondary)',
-                borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }} />
-              <span style={{ fontSize:13, color:'#7a5900', fontWeight:600 }}>{predStep}</span>
-            </div>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-          </div>
-        )}
-
-        {prediction && !predicting && (
-          <div style={{ marginTop:18, padding:22, background:'linear-gradient(135deg,var(--secondary-light),#FDF2F8)',
-            borderRadius:16, border:'1.5px solid #F9A8D4' }}>
-            
-            {prediction.detected_category && prediction.detected_category !== 'default' && (
-                <div style={{ marginBottom: 12, fontSize: 14, fontWeight: 700, color: '#059669', background: '#d1fae5', display: 'inline-block', padding: '4px 10px', borderRadius: 8 }}>
-                    Detected: {prediction.detected_category.charAt(0).toUpperCase() + prediction.detected_category.slice(1)} decoration
-                </div>
-            )}
-
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
-              <div>
-                <div style={{ fontFamily:'EB Garamond,serif', fontSize:14, color:'#7a5900', marginBottom:4 }}>
-                  AI Predicted Cost
-                </div>
-                
-                {prediction.predicted_cost === 0 || prediction.predicted_cost === 350000 ? (
-                  <div style={{ fontFamily:'EB Garamond,serif', fontSize:22, fontWeight:700, color:'#DC2626', lineHeight:1.2, maxWidth: 220 }}>
-                    Upload a clearer image for better estimate
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ fontFamily:'EB Garamond,serif', fontSize:38, fontWeight:800, color:'var(--secondary)', lineHeight:1 }}>
-                      {formatRupees(prediction.predicted_cost)}
-                    </div>
-                    <div style={{ fontSize:13, color:'var(--muted)', marginTop:6 }}>
-                      Typical range for this category: {formatRupees(prediction.range?.[0])} – {formatRupees(prediction.range?.[1])}
-                    </div>
-                  </>
-                )}
-              </div>
-              <div style={{ textAlign:'center', background:'white', borderRadius:14, padding:'14px 20px',
-                border:'1px solid #F9A8D4' }}>
-                <div style={{ fontSize:22, fontWeight:800, color: prediction.confidence > 0.8 ? '#059669' : '#D97706' }}>
-                  {Math.round((prediction.confidence)*100)}%
-                  <div style={{ fontSize:11, display:'inline-block', marginLeft: 4, fontWeight:500, color:'#6B7280'}}>confidence</div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ fontSize:11, color:'var(--muted)', marginBottom:16, lineHeight: 1.4 }}>
-              {prediction.message || 'Estimated based on Indian market rates 2024-26. Label this image in admin panel for ML prediction.'}
-            </div>
-
-            {prediction.source === 'Estimated price'
-              ? <div style={{ marginBottom:16 }}>
-                  <span style={{ fontSize:12, color:'#9ca3af' }}>Market Estimate</span>
-                </div>
-              : <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
-                  <div style={{ 
-                    padding:'4px 12px', background:'rgba(236,72,153,0.1)', 
-                    borderRadius:20, fontSize:12, fontWeight:700, color:'#D4537E',
-                    border: '1px solid rgba(212,83,126,0.2)'
-                  }}>
-                    ✨ {prediction.source}
-                  </div>
-                  {prediction.confidence > 0.85 && (
-                    <div style={{ 
-                      padding:'4px 12px', background:'#ECFDF5', 
-                      borderRadius:20, fontSize:11, fontWeight:700, color:'#059669',
-                      border: '1px solid #10B98133'
-                    }}>
-                      High Accuracy
-                    </div>
-                  )}
-                </div>
-            }
-
-            {prediction.similar_items?.length > 0 && (
-              <div>
-                <div style={{ fontWeight:700, fontSize:13, color:'#7a5900', marginBottom:10 }}>
-                   Similar designs from our library:
-                </div>
-                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                  {prediction.similar_items.slice(0,3).map((s,i)=>{
-                    const libItem = DECOR_LIBRARY.find(d=>d.name===s.name || d.function_type===s.function_type)
-                    return (
-                      <div key={i} style={{ padding:'8px 14px', background:'white', borderRadius:10,
-                        border:'1px solid #F9A8D4', fontSize:13, display:'flex', gap:6, alignItems:'center' }}>
-                        <span style={{ fontSize:18 }}>{libItem?.emoji||''}</span>
-                        <div>
-                          <div style={{ fontWeight:600 }}>{s.name||s.function_type}</div>
-                          <div style={{ fontSize:11, color:'var(--primary)', fontWeight:700 }}>
-                            {formatRupees(s.actual_cost||s.base_cost)}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {prediction.predicted_cost !== 0 && prediction.predicted_cost !== 350000 && (
-              <button
-                onClick={() => {
-                  const aiId = `ai-pred-${JSON.stringify({ 
-                    cost: prediction.predicted_cost, 
-                    name: uploadTag.function_type 
-                  })}`
-                  
-                  const newItem = {
-                    id: aiId,
-                    name: `AI: ${uploadTag.function_type}`,
-                    predicted: prediction.predicted_cost,
-                    low: prediction.range[0],
-                    high: prediction.range[1],
-                    emoji: '✨',
-                    isAi: true
-                  }
-
-                  const next = [...selected, newItem]
-                  setSelected(next)
-                  update('decor_total', next.reduce((s,i) => s + i.predicted, 0))
-                  update('decor_selections', next.map(s => s.id))
-                  
-                  setHasAddedPrediction(true)
-                  setShowAiSuccess(true)
-                }}
-                disabled={hasAddedPrediction}
-                style={{
-                  width:'100%',
-                  marginTop: 16,
-                  padding:'14px',
-                  borderRadius:12,
-                  border:'none',
-                  background: hasAddedPrediction ? '#059669' : '#FFB703',
-                  color: hasAddedPrediction ? 'white' : '#023047',
-                  fontWeight:700,
-                  fontSize:15,
-                  cursor: hasAddedPrediction ? 'default' : 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transform: hasAddedPrediction ? 'scale(0.98)' : 'scale(1)',
-                  opacity: hasAddedPrediction ? 0.9 : 1
-                }}
-                onMouseOver={e => !hasAddedPrediction && (e.currentTarget.style.background = '#FFA000')}
-                onMouseOut={e => !hasAddedPrediction && (e.currentTarget.style.background = '#FFB703')}
-              >
-                {hasAddedPrediction ? '✓ Prediction Added to Budget' : `Confirm & Add ${formatRupees(prediction.predicted_cost)} to Budget`}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Selected Summary */}
-      {selected.length > 0 && (
-        <div className="section-card" style={{ border:'1.5px solid var(--primary)' }}>
-          <div className="section-title"> Your Shortlist ({selected.length} items)</div>
-          <div style={{ marginBottom:16 }}>
-            {selected.map(s => (
-              <div key={s.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
-                <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-                  <span style={{ fontSize:26 }}>{s.emoji}</span>
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:14 }}>{s.name}</div>
-                    <div style={{ display:'flex', gap:6, marginTop:4 }}>
-                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, fontWeight:700,
-                        background:COMPLEXITY_COLOR[s.complexity]+'20', color:COMPLEXITY_COLOR[s.complexity] }}>{s.complexity}</span>
-                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, fontWeight:700,
-                        background:(STYLE_COLOR[s.style]||'#888')+'20', color:STYLE_COLOR[s.style]||'#888' }}>{s.style}</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <div>
-                    <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color:'var(--primary)', textAlign:'right' }}>
-                      {formatRupees(s.predicted)}
-                    </div>
-                    <div style={{ fontSize:11, color:'var(--muted)', textAlign:'right' }}>
-                      {formatRupees(s.low)} – {formatRupees(s.high)}
-                    </div>
-                  </div>
-                  <button onClick={(e)=>{e.stopPropagation();toggleItem(s)}} style={{
-                    width:28, height:28, borderRadius:'50%', border:'none', background:'#FEE2E2',
-                    color:'#DC2626', cursor:'pointer', fontWeight:'bold', fontSize:16
-                  }}>×</button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ background:'linear-gradient(135deg,#023047,#04699b)', borderRadius:14,
-            padding:'18px 24px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <div style={{ color:'white', fontSize:15, fontWeight:600 }}>Total Decor Budget</div>
-            <div style={{ fontFamily:'EB Garamond,serif', fontSize:30, fontWeight:800, color:'#FDE68A' }}>
-              {formatRupees(totalDecor * (wedding.cost_multipliers?.['Decor & Design'] || 1))}
-              {(wedding.cost_multipliers?.['Decor & Design'] || 1) !== 1 && (
-                <div style={{ fontSize: 10, textAlign: 'right', fontWeight: 400, color: 'white', opacity: 0.8 }}>
-                   (AI Optimised ×{wedding.cost_multipliers['Decor & Design'].toFixed(2)})
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sticky Next button */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          position: 'sticky', bottom: 'calc(1.5rem + 60px)',
-          display: 'flex', justifyContent: 'center',
-          zIndex: 50, marginTop: '2rem'
-        }}
-      >
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('weddingNextTab'))}
+        <div
+          onClick={() => document.getElementById('ai-file-upload').click()}
           style={{
-            background: '#111', color: '#fff',
-            border: 'none', borderRadius: '10px',
-            padding: '14px 40px', fontSize: '15px',
-            fontWeight: 600, cursor: 'pointer',
-            fontFamily: 'inherit',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+            border: `2px dashed ${uploadedFile ? '#10B981' : '#CBD5E1'}`,
+            background: uploadedFile ? '#F0FDF4' : '#fff',
+            borderRadius: 24, padding: '60px 40px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s'
           }}
         >
-          Next: Food →
+          <input type="file" id="ai-file-upload" hidden onChange={e => setUploadedFile(e.target.files[0])} />
+          <div style={{ fontSize: 40, marginBottom: 15 }}>{uploadedFile ? '✅' : '📸'}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#1B1F23' }}>{uploadedFile ? uploadedFile.name : 'Click to upload or drag image'}</div>
+          <p style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}>Supports PNG, JPG (Max 5MB)</p>
+        </div>
+
+        {imgRelevanceWarn && <div style={{ color: '#EF4444', fontSize: 13, fontWeight: 700, textAlign: 'center', marginTop: 15 }}>{imgRelevanceWarn}</div>}
+
+        <button
+          onClick={handlePredict}
+          disabled={predicting || !uploadedFile}
+          style={{
+            width: '100%', marginTop: 20, padding: '18px', borderRadius: 18, border: 'none',
+            background: '#000', color: '#fff', fontWeight: 800, fontSize: 16, cursor: 'pointer',
+            opacity: (predicting || !uploadedFile) ? 0.6 : 1
+          }}
+        >
+          {predicting ? 'AI Analyzing Design...' : 'Generate AI Estimate'}
         </button>
-      </motion.div>
+
+        {prediction && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            style={{ marginTop: 30, background: '#fff', borderRadius: 24, padding: '30px', border: '1px solid #E2E8F0' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#F77C83', textTransform: 'uppercase', marginBottom: 8 }}>Estimated Market Cost</div>
+                <div style={{ fontSize: 44, fontWeight: 800, color: '#1B212A' }}>{formatRupees(prediction.predicted_cost)}</div>
+                <p style={{ fontSize: 14, color: '#64748B', marginTop: 10 }}>Confidence: {Math.round(prediction.confidence * 100)}% • Source: {prediction.source}</p>
+              </div>
+              <button
+                onClick={addToBudget}
+                disabled={hasAddedPrediction}
+                style={{
+                  padding: '16px 32px', borderRadius: 16, border: 'none',
+                  background: hasAddedPrediction ? '#F0FDF4' : '#F77C83',
+                  color: hasAddedPrediction ? '#10B981' : '#fff',
+                  fontWeight: 800, fontSize: 15, cursor: 'pointer'
+                }}
+              >
+                {hasAddedPrediction ? '✓ Added' : 'Add to Shortlist'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </section>
+
+      {/* Next Step Navigation */}
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '60px 0' }}>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('weddingNextTab'))}
+          className="btn-premium" style={{ padding: '18px 60px' }}>
+          Continue to Food Selections
+        </button>
+      </div>
     </div>
   )
 }

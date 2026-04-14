@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
 
 const EMOJIS = [
-  { icon: '💍', x: 7, y: 14, speed: 0.28 },
-  { icon: '🌸', x: 92, y: 18, speed: 0.34 },
-  { icon: '✨', x: 8, y: 42, speed: 0.24 },
-  { icon: '🎊', x: 91, y: 44, speed: 0.31 },
-  { icon: '💐', x: 10, y: 71, speed: 0.22 },
-  { icon: '🎉', x: 89, y: 73, speed: 0.27 },
+  { icon: '', x: 7, y: 14, speed: 0.28 },
+  { icon: '', x: 92, y: 18, speed: 0.34 },
+  { icon: '', x: 8, y: 42, speed: 0.24 },
+  { icon: '', x: 91, y: 44, speed: 0.31 },
+  { icon: '', x: 10, y: 71, speed: 0.22 },
+  { icon: '', x: 89, y: 73, speed: 0.27 },
 ]
 
 const BUBBLE_COLORS = ['#D4537E', '#C93F6C', '#E67FA2', '#F3AFC6']

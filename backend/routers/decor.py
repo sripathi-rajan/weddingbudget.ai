@@ -21,12 +21,12 @@ IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dat
 
 # ── Hardcoded fallback library (used when DB is empty or unavailable) ──────────
 _FALLBACK_LIBRARY = [
-    {"id": 1,  "emoji": "🌸", "name": "Floral Arch Mandap",       "style": "Romantic",    "complexity": 4, "base_cost": 200000, "function_type": "Mandap"},
-    {"id": 2,  "emoji": "🕯️", "name": "Candle Centerpieces",       "style": "Minimalist",  "complexity": 1, "base_cost": 40000,  "function_type": "Table Decor"},
-    {"id": 3,  "emoji": "🌺", "name": "Marigold Garland Entrance", "style": "Traditional", "complexity": 2, "base_cost": 50000,  "function_type": "Entrance"},
-    {"id": 4,  "emoji": "✨", "name": "LED Fairy Light Ceiling",   "style": "Modern",      "complexity": 4, "base_cost": 130000, "function_type": "Ceiling"},
-    {"id": 5,  "emoji": "🌿", "name": "Tropical Leaf Backdrop",    "style": "Boho",        "complexity": 3, "base_cost": 70000,  "function_type": "Backdrop"},
-    {"id": 6,  "emoji": "🦋", "name": "Floral Stage Decor",        "style": "Whimsical",   "complexity": 5, "base_cost": 250000, "function_type": "Stage"},
+    {"id": 1,  "emoji": "", "name": "Floral Arch Mandap",       "style": "Romantic",    "complexity": 4, "base_cost": 200000, "function_type": "Mandap"},
+    {"id": 2,  "emoji": "", "name": "Candle Centerpieces",       "style": "Minimalist",  "complexity": 1, "base_cost": 40000,  "function_type": "Table Decor"},
+    {"id": 3,  "emoji": "", "name": "Marigold Garland Entrance", "style": "Traditional", "complexity": 2, "base_cost": 50000,  "function_type": "Entrance"},
+    {"id": 4,  "emoji": "", "name": "LED Fairy Light Ceiling",   "style": "Modern",      "complexity": 4, "base_cost": 130000, "function_type": "Ceiling"},
+    {"id": 5,  "emoji": "", "name": "Tropical Leaf Backdrop",    "style": "Boho",        "complexity": 3, "base_cost": 70000,  "function_type": "Backdrop"},
+    {"id": 6,  "emoji": "", "name": "Floral Stage Decor",        "style": "Whimsical",   "complexity": 5, "base_cost": 250000, "function_type": "Stage"},
 ]
 
 RULE_RANGES = {1: (30_000, 80_000), 2: (80_000, 200_000), 3: (200_000, 500_000),

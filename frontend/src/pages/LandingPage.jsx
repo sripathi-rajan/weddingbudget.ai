@@ -467,7 +467,7 @@ const FLOATING_EMOJIS = [
   { emoji: '', x: 80, y: 88, speed: 0.35 }
 ]
 
-export default function LandingPage({ onEnter, onOpenGuide }) {
+export default function LandingPage({ onEnter, onOpenGuide, onVendorRegister }) {
   const [fading, setFading] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [statsAnimated, setStatsAnimated] = useState(false)
@@ -616,11 +616,21 @@ export default function LandingPage({ onEnter, onOpenGuide }) {
         @media (max-width: 800px) {
           #main-nav { display: none !important; }
         }
-        @media (max-width: 480px) {
-          .nav-logo-text { font-size: 0.9rem !important; }
-          .btn-ghost { padding: 8px 6px !important; font-size: 0.8rem !important; }
-          .btn-primary { padding: 8px 14px !important; font-size: 0.8rem !important; white-space: nowrap !important; }
-          .header-inner { padding: 0 12px !important; gap: 8px !important; }
+        /* ── Mobile header: hide secondary action buttons ── */
+        @media (max-width: 640px) {
+          .header-inner { padding: 0 14px !important; gap: 10px !important; }
+          .nav-logo-text { font-size: 0.92rem !important; }
+          .landing-btn-secondary { display: none !important; }
+          .landing-btn-primary {
+            padding: 9px 16px !important;
+            font-size: 0.82rem !important;
+            white-space: nowrap !important;
+            border-radius: 50px !important;
+          }
+        }
+        @media (max-width: 380px) {
+          .nav-logo-text { font-size: 0.82rem !important; }
+          .landing-btn-primary { padding: 8px 13px !important; font-size: 0.78rem !important; }
         }
       `}</style>
 
@@ -658,34 +668,37 @@ export default function LandingPage({ onEnter, onOpenGuide }) {
           </nav>
 
           <div style={S.headerActions}>
+            {/* Secondary buttons — hidden on mobile via .landing-btn-secondary */}
             <button
               style={{ ...S.btnGhost, color: '#e91e8c', fontWeight: 600, fontSize: '0.75rem', padding: '6px 12px' }}
               onClick={(e) => { e.preventDefault(); onOpenGuide(); }}
-              className="btn-ghost"
+              className="btn-ghost landing-btn-secondary"
             >
               Guide
             </button>
             <button
               style={S.btnGhost}
               onClick={(e) => { e.preventDefault(); enter('admin'); }}
-              className="btn-ghost"
+              className="btn-ghost landing-btn-secondary"
             >
               Admin
             </button>
             <button
+               style={{ ...S.btnGhost, color: '#e91e8c', border: '1px solid #fce4ec', background: '#fdf2f8' }}
+               onClick={(e) => { e.preventDefault(); onVendorRegister(); }}
+               className="btn-ghost landing-btn-secondary"
+             >
+               Be a Vendor
+             </button>
+            {/* Primary CTA — always visible */}
+            <button
               style={S.btnPrimary}
               onClick={(e) => { e.preventDefault(); enter('client'); }}
-              className="btn-primary"
+              className="btn-primary landing-btn-primary"
             >
               Start Planning
             </button>
           </div>
-
-          <button className="hamburger" style={S.hamburger} id="hamburger">
-            <span style={S.hamburgerSpan}></span>
-            <span style={S.hamburgerSpan}></span>
-            <span style={S.hamburgerSpan}></span>
-          </button>
         </div>
       </header>
 
@@ -798,12 +811,20 @@ export default function LandingPage({ onEnter, onOpenGuide }) {
           <p style={S.ctaP}>
             Join thousands of couples who planned their perfect day with WeddingBudget.AI
           </p>
-          <button
-            style={{ ...S.btnPrimary, ...S.btnLarge, background: '#e91e8c' }}
-            onClick={() => enter('client')}
-          >
-            Start Planning — It's Free →
-          </button>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              style={{ ...S.btnPrimary, ...S.btnLarge, background: '#e91e8c' }}
+              onClick={() => enter('client')}
+            >
+              Start Planning — It's Free →
+            </button>
+            <button
+               style={{ ...S.btnOutline, ...S.btnLarge, color: '#e91e8c', borderColor: '#e91e8c' }}
+               onClick={onVendorRegister}
+             >
+               Register as a Vendor
+             </button>
+          </div>
         </div>
       </section>
 

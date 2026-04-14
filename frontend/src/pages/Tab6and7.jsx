@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWedding, SFX_ITEMS, formatRupees } from '../context/WeddingContext'
-import { MultiImageSelector } from '../components/ImageCard'
+import { ImageCard, MultiImageSelector } from '../components/ImageCard'
 import { scrollToNextSection } from '../utils/scrollToNext'
 
 const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4fa', sky: '#8ecae6', orange: '#fb8500' }
@@ -38,13 +38,14 @@ export function Tab6Sundries() {
   const photoVideo  = getVal('photoVideo',  80000)
   const makeupHair  = getVal('makeupHair',  50000)
 
-  const basketTotal  = basketQty  * basketPrice
-  const hamperTotal  = hamperQty  * hamperPrice
-  const stationTotal = stationQty * stationPP
-  const subTotal     = basketTotal + hamperTotal + ritualAmt + stationTotal + photoVideo + makeupHair
-  const contingency  = Math.round(subTotal * 0.08)
-  const baseSundryTotal = subTotal + contingency
-  const sundryTotal = Math.round(baseSundryTotal * (wedding.cost_multipliers?.['Sundries & Basics'] || 1))
+  const basketTotal  = (basketQty || 0) * (basketPrice || 0)
+  const hamperTotal  = (hamperQty || 0) * (hamperPrice || 0)
+  const stationTotal = (stationQty || 0) * (stationPP || 0)
+  const subTotal     = (basketTotal || 0) + (hamperTotal || 0) + (ritualAmt || 0) + (stationTotal || 0) + (photoVideo || 0) + (makeupHair || 0)
+  const contingency  = Math.round((subTotal || 0) * 0.08)
+  const baseSundryTotal = (subTotal || 0) + (contingency || 0)
+  const multiplier = Number(wedding?.cost_multipliers?.['Sundries & Basics'] || 1)
+  const sundryTotal = Math.round(baseSundryTotal * multiplier)
 
   const inp = (val, key, w=80) => (
     <input type="number" min={0} value={val}
@@ -64,70 +65,22 @@ export function Tab6Sundries() {
       {/* Room Basket Tier */}
       <div className="section-card" data-section="sundries-main">
         <div className="section-title"> Room Basket Tier <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           {[
             { id:'luxury',   emoji:'', label:'Luxury',   rate:'₹2,500/room', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
             { id:'standard', emoji:'', label:'Standard', rate:'₹800/room', imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
             { id:'minimal',  emoji:'', label:'Minimal',  rate:'₹300/room', imageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#475569' },
           ].map(opt => (
-            (() => {
-              const selected = wedding.room_basket_budget === opt.id
-              return (
-            <div key={opt.id} onClick={() => { update('room_basket_budget', opt.id); scrollToNextSection('sundries-main', 420) }}
-              style={{
-                border: selected ? '2px solid #C9A84C' : '2px solid transparent',
-                borderRadius:12,
-                padding:18,
-                textAlign:'center',
-                cursor:'pointer',
-                backgroundColor: opt.fallbackColor,
-                backgroundImage: !basketImageErrors[opt.id]
-                  ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${opt.imageUrl})`
-                  : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                transition:'all 0.2s ease',
-                boxShadow: selected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-                minHeight: 120,
-                position: 'relative',
-                color: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              {!basketImageErrors[opt.id] && (
-                <img
-                  src={opt.imageUrl}
-                  alt=""
-                  onError={() => setBasketImageErrors(prev => ({ ...prev, [opt.id]: true }))}
-                  style={{ display: 'none' }}
-                />
-              )}
-              {selected && (
-                <span style={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  background: '#C9A84C',
-                  color: '#111',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 12,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                }}>✓</span>
-              )}
-              <div style={{ fontSize:34 }}>{opt.emoji}</div>
-              <div style={{ fontWeight:700, marginTop:6, fontSize:16, color:'#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{opt.label}</div>
-              <div style={{ fontSize:12, color:'rgba(255,255,255,0.85)', fontWeight:700, marginTop:2 }}>{opt.rate}</div>
-            </div>
-              )
-            })()
+            <ImageCard
+              key={opt.id}
+              item={opt}
+              selected={wedding.room_basket_budget === opt.id}
+              onClick={() => { update('room_basket_budget', opt.id); scrollToNextSection('sundries-main', 420) }}
+              hasAnySelected={!!wedding.room_basket_budget && wedding.room_basket_budget !== opt.id}
+              badge="SUNDRY"
+              budget={opt.rate}
+              actionLabel="Select Tier"
+            />
           ))}
         </div>
       </div>
@@ -205,9 +158,9 @@ export function Tab6Sundries() {
           </div>
           <div style={{ fontFamily:'EB Garamond,serif', fontSize:32, fontWeight:800, color:C.amber, textAlign: 'right' }}>
             {formatRupees(sundryTotal)}
-            {(wedding.cost_multipliers?.['Sundries & Basics'] || 1) !== 1 && (
+            {multiplier !== 1 && (
               <div style={{ fontSize: 10, fontWeight: 400, color: 'white', opacity: 0.8 }}>
-                (AI Optimised ×{wedding.cost_multipliers['Sundries & Basics'].toFixed(2)})
+                (AI Optimised ×{Number(multiplier).toFixed(2)})
               </div>
             )}
           </div>
@@ -303,11 +256,14 @@ export function Tab7Logistics() {
   const SFX_COSTS = { 'Cold Pyro': 18000, 'Confetti Cannon': 10000, 'Smoke Machine': 8000, 'Laser Show': 30000, 'Flower Cannon': 12000 }
   const sfxCost = (wedding.sfx_items || []).reduce((s, item) => s + (SFX_COSTS[item] || 0), 0)
 
-  const baseLogisticsTotal = transferCost + ghodiCost + dholiCost + sfxCost + brideTravel + groomTravel
-  const logisticsTotal = Math.round(baseLogisticsTotal * (wedding.cost_multipliers?.['Logistics & Transport'] || 1))
+  const baseLogisticsTotal = (transferCost || 0) + (ghodiCost || 0) + (dholiCost || 0) + (sfxCost || 0) + (brideTravel || 0) + (groomTravel || 0)
+  const logMultiplier = Number(wedding?.cost_multipliers?.['Logistics & Transport'] || 1)
+  const logisticsTotal = Math.round(baseLogisticsTotal * logMultiplier)
 
   useEffect(() => {
-    if (wedding.logistics_total !== logisticsTotal) update('logistics_total', logisticsTotal)
+    const current = Number(wedding.logistics_total) || 0
+    const target = Number(logisticsTotal) || 0
+    if (Math.abs(current - target) > 1) update('logistics_total', target)
   }, [logisticsTotal])
 
   const mapsUrl = district
@@ -386,9 +342,9 @@ export function Tab7Logistics() {
               {transportPct > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 8 }}>
                   {[
-                    { label: 'Outstation guests', value: outstationGuests },
-                    { label: 'Innova Crystas needed', value: transferCars },
-                    { label: 'Estimated cost', value: `₹${(transferCost / 100000).toFixed(1)}L` },
+                    { label: 'Outstation guests', value: outstationGuests || 0 },
+                    { label: 'Innova Crystas needed', value: transferCars || 0 },
+                    { label: 'Estimated cost', value: `₹${((transferCost || 0) / 100000).toFixed(1)}L` },
                   ].map(s => (
                     <div key={s.label} style={{
                       background: '#F8F8F8', borderRadius: 12, padding: '16px 14px', textAlign: 'center',
@@ -597,9 +553,9 @@ export function Tab7Logistics() {
         <div style={{ fontFamily:'EB Garamond,serif', fontSize:42, fontWeight:800,
           color:C.primary, textAlign:'center', marginBottom:20 }}>
           {formatRupees(logisticsTotal)}
-          {(wedding.cost_multipliers?.['Logistics & Transport'] || 1) !== 1 && (
+          {logMultiplier !== 1 && (
             <div style={{ fontSize: 11, fontWeight: 400, color: C.blue, opacity: 0.6, marginTop: -4 }}>
-              (AI Optimised ×{wedding.cost_multipliers['Logistics & Transport'].toFixed(2)})
+              (AI Optimised ×{Number(logMultiplier).toFixed(2)})
             </div>
           )}
         </div>

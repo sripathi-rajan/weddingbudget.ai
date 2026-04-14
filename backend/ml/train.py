@@ -197,7 +197,7 @@ def train():
     mape = mean_absolute_percentage_error(y_test, y_pred) * 100
     r2   = r2_score(y_test, y_pred)
 
-    print(f"  ✅ Model trained:")
+    print(f"     Model trained:")
     print(f"     MAE:  ₹{mae:,.0f}")
     print(f"     MAPE: {mape:.1f}%")
     print(f"     R²:   {r2:.3f}")
@@ -209,8 +209,8 @@ def train():
 
     joblib.dump(model, MODEL_PATH)
     joblib.dump(encoder, ENCODER_PATH)
-    print(f"  💾 Model → {MODEL_PATH}")
-    print(f"  💾 Encoder → {ENCODER_PATH}")
+    print(f"  Model → {MODEL_PATH}")
+    print(f"  Encoder → {ENCODER_PATH}")
 
     # Save embeddings
     embeddings = {i: fake_embedding(d["embedding_seed"]).tolist() for i, d in enumerate(SAMPLE_DATA)}
@@ -219,7 +219,7 @@ def train():
     print(f"  💾 Embeddings → embeddings.json")
 
     # Print sample predictions
-    print("\n  📊 Sample predictions:")
+    print("\n Sample predictions:")
     test_cases = [
         ("Mandap",      "Luxury",      "High",   "Metro"),
         ("Mandap",      "Traditional", "Medium", "South India"),

@@ -204,6 +204,18 @@ def calculate_full_budget(config: dict) -> dict:
     except Exception:
         pass  # RL not yet initialised — degrade gracefully
 
+    # ─── manual overrides ───
+    manual = config.get("manual_category_budgets", {})
+    if isinstance(manual, dict):
+        for cat, val in manual.items():
+            if val and isinstance(val, (int, float)) and val > 0:
+                items[cat] = {
+                    "low":  val * 0.95,
+                    "mid":  val,
+                    "high": val * 1.05,
+                    "note": "Manual entry override"
+                }
+
     # ─── Totals ───────────────────────────────────────────
     total_low  = sum(v["low"]  for v in items.values())
     total_mid  = sum(v["mid"]  for v in items.values())

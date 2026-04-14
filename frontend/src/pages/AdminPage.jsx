@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { API_BASE } from '../utils/config'
+import Checklist from '../components/Checklist'
+import { useWedding } from '../context/WeddingContext'
 
 const API = API_BASE
 console.log(API_BASE)
@@ -33,10 +35,11 @@ function clearToken() {
 
 async function apiFetch(path, opts = {}) {
   const token = getToken()
+  const isFormData = opts.body instanceof FormData
   const res = await fetch(`${API}/admin${path}`, {
     ...opts,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(opts.headers || {}),
     },
@@ -82,10 +85,10 @@ function Toast({ msg, ok = true }) {
 
 function useToast() {
   const [toast, setToast] = useState(null)
-  const show = (msg, ok = true) => {
+  const show = useCallback((msg, ok = true) => {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 2800)
-  }
+  }, [])
   return [toast, show]
 }
 
@@ -242,6 +245,9 @@ function FinalizedBudgetsTab() {
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState(null)
   const [toast, showToast] = useToast()
+  
+  const [editingDate, setEditingDate] = useState(false)
+  const [newDate, setNewDate] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -256,6 +262,26 @@ function FinalizedBudgetsTab() {
   }, [showToast])
 
   useEffect(() => { load() }, [load])
+
+  const saveNewDate = async () => {
+    if (!selected) return
+    try {
+      // Optimistic update of local state
+      const updatedProfile = { ...selected.wedding_profile, wedding_date: newDate }
+      const updatedBudget = { ...selected, wedding_profile: updatedProfile }
+      
+      // Update in the main list
+      setBudgets(list => list.map(b => b.id === selected.id ? updatedBudget : b))
+      setSelected(updatedBudget)
+      setEditingDate(false)
+      showToast('Wedding date updated locally')
+      
+      // In a real app, you would also call an API here:
+      // await apiFetchBudget(`/budget/update-date/${selected.id}`, { method: 'PATCH', body: JSON.stringify({ wedding_date: newDate }) })
+    } catch (e) {
+      showToast(e.message, false)
+    }
+  }
 
   return (
     <Card>
@@ -299,36 +325,63 @@ function FinalizedBudgetsTab() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: 20
         }} onClick={() => setSelected(null)}>
           <div style={{
-            background: 'white', borderRadius: 20, width: '100%', maxWidth: 600,
-            maxHeight: '90vh', overflowY: 'auto', padding: 32, boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+            background: 'white', borderRadius: 24, width: '100%', maxWidth: 850,
+            maxHeight: '90vh', overflowY: 'auto', padding: 0, boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
           }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: C.navy }}>Wedding Profile: {selected.user_name}</div>
-              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888' }}>×</button>
-            </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, fontSize: 14 }}>
-              <div><strong>Wedding Type:</strong> {selected.wedding_profile.wedding_type}</div>
-              <div><strong>Date:</strong> {selected.wedding_profile.wedding_date}</div>
-              <div><strong>Guests:</strong> {selected.wedding_profile.total_guests}</div>
-              <div><strong>Budget Tier:</strong> {selected.wedding_profile.budget_tier}</div>
-              <div style={{ gridColumn: 'span 2' }}>
-                <strong>Events:</strong> {selected.wedding_profile.events?.join(', ')}
+            <div style={{ padding: 32 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: C.navy }}>Wedding Profile: {selected.user_name}</div>
+                <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888' }}>×</button>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, fontSize: 14, background: '#f8fafc', padding: 20, borderRadius: 16, marginBottom: 24 }}>
+                <div><span style={{color: '#64748b'}}>Wedding Type:</span> <strong style={{color: C.navy}}>{selected.wedding_profile.wedding_type}</strong></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{color: '#64748b'}}>Date:</span> 
+                  {editingDate ? (
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <input 
+                        type="date" 
+                        value={newDate} 
+                        onChange={e => setNewDate(e.target.value)} 
+                        style={{ ...inputStyle, padding: '4px 8px', width: 'auto' }}
+                      />
+                      <Btn small onClick={saveNewDate} color={C.green}>Save</Btn>
+                      <Btn small onClick={() => setEditingDate(false)} color="#888">×</Btn>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <strong style={{color: C.navy}}>{selected.wedding_profile.wedding_date || 'Not Set'}</strong>
+                      <button 
+                        onClick={() => { setEditingDate(true); setNewDate(selected.wedding_profile.wedding_date || '') }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: C.blue, padding: 0 }}
+                      >✎ Edit</button>
+                    </div>
+                  )}
+                </div>
+                <div><span style={{color: '#64748b'}}>Guests:</span> <strong style={{color: C.navy}}>{selected.wedding_profile.total_guests}</strong></div>
+                <div><span style={{color: '#64748b'}}>Budget Tier:</span> <strong style={{color: C.navy}}>{selected.wedding_profile.budget_tier}</strong></div>
+              </div>
+
+              {/* Checklist Section for this specific event */}
+              <div style={{ borderTop: '2px solid #f1f5f9', paddingTop: 24 }}>
+                <AdminChecklistForEvent weddingDate={selected.wedding_profile.wedding_date} bookingId={selected.id} />
+              </div>
+
+              <div style={{ marginTop: 24 }}>
+                <div style={{ fontWeight: 700, marginBottom: 10, borderBottom: '1px solid #eee', paddingBottom: 6 }}>Full Raw Profile (JSON)</div>
+                <pre style={{
+                  background: '#f8f9fa', padding: 12, borderRadius: 10, fontSize: 11,
+                  overflowX: 'auto', maxHeight: 200, color: '#444'
+                }}>
+                  {JSON.stringify(selected.wedding_profile, null, 2)}
+                </pre>
               </div>
             </div>
 
-            <div style={{ marginTop: 24 }}>
-              <div style={{ fontWeight: 700, marginBottom: 10, borderBottom: '1px solid #eee', paddingBottom: 6 }}>Full Raw Profile (JSON)</div>
-              <pre style={{
-                background: '#f8f9fa', padding: 12, borderRadius: 10, fontSize: 11,
-                overflowX: 'auto', maxHeight: 300, color: '#444'
-              }}>
-                {JSON.stringify(selected.wedding_profile, null, 2)}
-              </pre>
-            </div>
-
-            <div style={{ marginTop: 24, textAlign: 'right' }}>
-              <Btn onClick={() => setSelected(null)} color={C.navy}>Close</Btn>
+            <div style={{ padding: '20px 32px', borderTop: '1px solid #eee', textAlign: 'right', background: '#fcfcfc', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
+              <Btn onClick={() => setSelected(null)} color={C.navy}>Close Profile</Btn>
             </div>
           </div>
         </div>
@@ -591,8 +644,12 @@ function DecorLabelsTab() {
   const [images, setImages] = useState([])
   const [drafts, setDrafts] = useState({})   // filename → {function_type, style, complexity, seed_cost}
   const [toast, showToast] = useToast()
+  
+  const [filterType, setFilterType] = useState('')
+  const [filterStyle, setFilterStyle] = useState('')
+  const [uploading, setUploading] = useState(false)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     apiFetch('/decor-images').then(r => {
       setImages(r.images || [])
       const init = {}
@@ -606,17 +663,37 @@ function DecorLabelsTab() {
       })
       setDrafts(init)
     }).catch(e => showToast(e.message, false))
-  }, [])
+  }, [showToast])
+
+  useEffect(() => { load() }, [load])
 
   const saveLabel = async (filename) => {
     const d = drafts[filename]
     try {
-      await apiFetch('/decor-images/label', {
+      await apiFetch('/admin-decor/label', {
         method: 'POST',
         body: JSON.stringify({ filename, ...d, complexity: Number(d.complexity), seed_cost: Number(d.seed_cost) }),
       })
       showToast(`Saved: ${filename}`)
     } catch (e) { showToast(e.message, false) }
+  }
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      await apiFetch('/admin-decor/upload', { method: 'POST', body: formData })
+      showToast('Image uploaded successfully')
+      load()
+    } catch (e) {
+      showToast(e.message, false)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   const update = (filename, field, value) => {
@@ -626,65 +703,110 @@ function DecorLabelsTab() {
   const FUNCTION_TYPES = ['Mandap', 'Stage', 'Ceiling', 'Entrance', 'Backdrop', 'Aisle', 'Table', 'Photo Booth', 'Lighting', 'Pillars', 'Other']
   const STYLES = ['Luxury', 'Romantic', 'Traditional', 'Modern', 'Rustic', 'Boho', 'Minimalist', 'Whimsical', 'Playful']
 
-  if (images.length === 0) {
-    return <Card><div style={{ color: '#888', fontSize: 13 }}>No decor images found in backend/decor_dataset/data/images/</div></Card>
-  }
+  const filteredImages = images.filter(img => {
+    const d = drafts[img.filename] || {}
+    const matchesType = !filterType || d.function_type === filterType
+    const matchesStyle = !filterStyle || d.style === filterStyle
+    return matchesType && matchesStyle
+  })
 
   return (
     <Card>
       {toast && <Toast {...toast} />}
-      <SectionTitle> Decor Image Labeller ({images.length} images)</SectionTitle>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-        {images.map(img => {
-          const d = drafts[img.filename] || {}
-          return (
-            <div key={img.filename} style={{
-              border: `1.5px solid ${C.sky}`, borderRadius: 12, overflow: 'hidden',
-              background: 'white', boxShadow: '0 2px 8px rgba(2,48,71,0.06)'
-            }}>
-              <div style={{ background: '#f0f7fc', padding: '8px 12px', fontSize: 11, color: '#4a7a94', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {img.filename}
-              </div>
-              <img
-                src={`${API_BASE.replace('/api', '')}/decor_images/${img.filename}`}
-                alt={img.filename}
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found' }}
-                style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
-              />
-              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Function Type</label>
-                  <select value={d.function_type || ''} onChange={e => update(img.filename, 'function_type', e.target.value)}
-                    style={{ ...inputStyle, marginTop: 3 }}>
-                    <option value="">— select —</option>
-                    {FUNCTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Style</label>
-                  <select value={d.style || ''} onChange={e => update(img.filename, 'style', e.target.value)}
-                    style={{ ...inputStyle, marginTop: 3 }}>
-                    <option value="">— select —</option>
-                    {STYLES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Complexity (1–5): <strong>{d.complexity}</strong></label>
-                  <input type="range" min={1} max={5} value={d.complexity || 3}
-                    onChange={e => update(img.filename, 'complexity', e.target.value)}
-                    style={{ width: '100%', marginTop: 4 }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Seed Cost (₹)</label>
-                  <input type="number" value={d.seed_cost || ''} onChange={e => update(img.filename, 'seed_cost', e.target.value)}
-                    placeholder="e.g. 150000" style={{ ...inputStyle, marginTop: 3 }} />
-                </div>
-                <Btn small onClick={() => saveLabel(img.filename)} color={C.navy}>Save Label</Btn>
-              </div>
-            </div>
-          )
-        })}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
+        <SectionTitle> Decor Image Labeller ({images.length} images)</SectionTitle>
+        
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <Btn color={C.amber} textColor={C.navy} disabled={uploading}>
+              {uploading ? 'Uploading...' : '+ Upload Image'}
+            </Btn>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleUpload} 
+              disabled={uploading}
+              style={{ position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+            />
+          </div>
+        </div>
       </div>
+
+      <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, marginBottom: 24, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: C.navy, display: 'block', marginBottom: 6 }}>Filter by Type</label>
+          <select value={filterType} onChange={e => setFilterType(e.target.value)} style={inputStyle}>
+            <option value="">All Types</option>
+            {FUNCTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: C.navy, display: 'block', marginBottom: 6 }}>Filter by Style</label>
+          <select value={filterStyle} onChange={e => setFilterStyle(e.target.value)} style={inputStyle}>
+            <option value="">All Styles</option>
+            {STYLES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <Btn onClick={() => { setFilterType(''); setFilterStyle('') }} color="#eee" textColor={C.navy}>Reset Filters</Btn>
+      </div>
+
+      {filteredImages.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#888' }}>
+          No images match your filters.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+          {filteredImages.map(img => {
+            const d = drafts[img.filename] || {}
+            return (
+              <div key={img.filename} style={{
+                border: `1.5px solid ${C.sky}`, borderRadius: 12, overflow: 'hidden',
+                background: 'white', boxShadow: '0 2px 8px rgba(2,48,71,0.06)'
+              }}>
+                <div style={{ background: '#f0f7fc', padding: '8px 12px', fontSize: 11, color: '#4a7a94', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {img.filename}
+                </div>
+                <img
+                  src={`${API_BASE.replace('/api', '')}/decor_images/${img.filename}`}
+                  alt={img.filename}
+                  onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found' }}
+                  style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
+                />
+                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Function Type</label>
+                    <select value={d.function_type || ''} onChange={e => update(img.filename, 'function_type', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}>
+                      <option value="">— select —</option>
+                      {FUNCTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Style</label>
+                    <select value={d.style || ''} onChange={e => update(img.filename, 'style', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}>
+                      <option value="">— select —</option>
+                      {STYLES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Complexity (1–5): <strong>{d.complexity}</strong></label>
+                    <input type="range" min={1} max={5} value={d.complexity || 3}
+                      onChange={e => update(img.filename, 'complexity', e.target.value)}
+                      style={{ width: '100%', marginTop: 4 }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Seed Cost (₹)</label>
+                    <input type="number" value={d.seed_cost || ''} onChange={e => update(img.filename, 'seed_cost', e.target.value)}
+                      placeholder="e.g. 150000" style={{ ...inputStyle, marginTop: 3 }} />
+                  </div>
+                  <Btn small onClick={() => saveLabel(img.filename)} color={C.navy}>Save Label</Btn>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </Card>
   )
 }
@@ -967,6 +1089,165 @@ function BudgetRulesTab() {
   )
 }
 
+// ── Tab: CRM ───────────────────────────────────────────────────────────────────
+function CRMTab() {
+  const [leads, setLeads] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [toast, showToast] = useToast()
+  const [editing, setEditing] = useState(null) 
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await apiFetch('/crm/leads')
+      setLeads(Array.isArray(data) ? data : [])
+    } catch (e) {
+      showToast(e.message, false)
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
+
+  useEffect(() => { load() }, [load])
+
+  const updateLead = async (id, patch) => {
+    try {
+      await apiFetch(`/crm/leads/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch)
+      })
+      setLeads(list => list.map(l => l.id === id ? { ...l, ...patch } : l))
+      showToast('Lead updated')
+      setEditing(null)
+    } catch (e) {
+      showToast(e.message, false)
+    }
+  }
+
+  const deleteLead = async (id) => {
+    if (!confirm('Delete this lead?')) return
+    try {
+      await apiFetch(`/crm/leads/${id}`, { method: 'DELETE' })
+      setLeads(list => list.filter(l => l.id !== id))
+      showToast('Lead deleted')
+    } catch (e) {
+      showToast(e.message, false)
+    }
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'New': return C.blue
+      case 'Contacted': return C.amber
+      case 'In-Progress': return C.orange
+      case 'Converted': return C.green
+      case 'Lost': return C.red
+      default: return '#666'
+    }
+  }
+
+  return (
+    <Card>
+      {toast && <Toast {...toast} />}
+      <SectionTitle>Customer Relationship Management (CRM)</SectionTitle>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div style={{ background: '#f0f9ff', padding: 16, borderRadius: 12, border: '1px solid #bae6fd' }}>
+          <div style={{ fontSize: 12, color: '#0369a1', fontWeight: 600 }}>Total Leads</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.navy }}>{leads.length}</div>
+        </div>
+        <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 12, border: '1px solid #bbf7d0' }}>
+          <div style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>Converted</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.green }}>{leads.filter(l => l.status === 'Converted').length}</div>
+        </div>
+        <div style={{ background: '#fff7ed', padding: 16, borderRadius: 12, border: '1px solid #fed7aa' }}>
+          <div style={{ fontSize: 12, color: '#c2410c', fontWeight: 600 }}>Pending Follow-up</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.orange }}>{leads.filter(l => l.status === 'New').length}</div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ color: '#888', fontSize: 13 }}>Loading Leads...</div>
+      ) : leads.length === 0 ? (
+        <div style={{ color: '#888', fontSize: 13 }}>No leads found. Capture more leads from the wizard!</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#f0f7fc' }}>
+                {['Source/Date', 'Client Details', 'Wedding Info', 'Status/Priority', 'Notes', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '12px 10px', textAlign: 'left', fontWeight: 700, color: C.navy, borderBottom: `2px solid ${C.amber}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {leads.map((l, i) => (
+                <tr key={l.id} style={{ background: i % 2 === 0 ? 'white' : '#f9fbfd', borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '12px 10px' }}>
+                    <div style={{ fontSize: 11, color: '#666' }}>{l.source}</div>
+                    <div style={{ fontWeight: 600 }}>{new Date(l.created_at).toLocaleDateString()}</div>
+                  </td>
+                  <td style={{ padding: '12px 10px' }}>
+                    <div style={{ fontWeight: 700, color: C.navy }}>{l.name}</div>
+                    <div style={{ fontSize: 12 }}>{l.email}</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>{l.phone}</div>
+                  </td>
+                  <td style={{ padding: '12px 10px' }}>
+                    <div style={{ fontSize: 12 }}>📅 {l.wedding_date || 'TBD'}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.blue }}>{formatRupees(l.budget)}</div>
+                  </td>
+                  <td style={{ padding: '12px 10px' }}>
+                    <div style={{ marginBottom: 6 }}>
+                      <select 
+                        value={l.status} 
+                        onChange={(e) => updateLead(l.id, { status: e.target.value })}
+                        style={{ ...inputStyle, padding: '2px 4px', fontSize: 11, border: `1px solid ${getStatusColor(l.status)}`, color: getStatusColor(l.status), fontWeight: 700, width: 'auto' }}
+                      >
+                        {['New', 'Contacted', 'In-Progress', 'Converted', 'Lost'].map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <select 
+                        value={l.priority} 
+                        onChange={(e) => updateLead(l.id, { priority: e.target.value })}
+                        style={{ ...inputStyle, padding: '2px 4px', fontSize: 11, width: 'auto' }}
+                      >
+                        {['Low', 'Medium', 'High'].map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px 10px' }}>
+                    {editing === l.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <textarea 
+                          defaultValue={l.notes} 
+                          onBlur={(e) => updateLead(l.id, { notes: e.target.value })}
+                          style={{ ...inputStyle, fontSize: 11, minHeight: 60 }}
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditing(l.id)}
+                        style={{ fontSize: 12, color: l.notes ? '#444' : '#aaa', fontStyle: l.notes ? 'normal' : 'italic', cursor: 'pointer', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {l.notes || 'Click to add notes...'}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ padding: '12px 10px' }}>
+                    <Btn small onClick={() => deleteLead(l.id)} color={C.red}>Delete</Btn>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── Tab: Settings ──────────────────────────────────────────────────────────────
 function SettingsTab({ onLogout }) {
   const [data, setData] = useState(null)
@@ -1084,15 +1365,322 @@ function SettingsTab({ onLogout }) {
   )
 }
 
+const INITIAL_ADMIN_TASKS = [
+  { id: 101, task: "Verify user's initial budget feasibility", months_before: 12, category: "Account", done: false },
+  { id: 102, task: "Assign lead wedding coordinator", months_before: 12, category: "Management", done: false },
+  { id: 103, task: "Create master project timeline", months_before: 12, category: "Planning", done: false },
+  { id: 104, task: "Initial venue scouting and feasibility", months_before: 11, category: "Venue", done: false },
+  { id: 105, task: "Negotiate partner base rates", months_before: 11, category: "Finance", done: false },
+  { id: 106, task: "Finalize vendor contract templates", months_before: 10, category: "Legal", done: false },
+  { id: 107, task: "Conduct venue site visits", months_before: 10, category: "Venue", done: false },
+  { id: 108, task: "Vet new catering partners", months_before: 9, category: "Food", done: false },
+  { id: 109, task: "Review photography portfolios", months_before: 9, category: "Vendors", done: false },
+  { id: 110, task: "Confirm floral season availability", months_before: 8, category: "Decor", done: false },
+  { id: 111, task: "Update artist availability calendar", months_before: 8, category: "Artists", done: false },
+  { id: 112, task: "Set up payment reminders for client", months_before: 7, category: "Finance", done: false },
+  { id: 113, task: "Finalize catering menu options", months_before: 7, category: "Food", done: false },
+  { id: 114, task: "Design floor plans and seating layouts", months_before: 6, category: "Design", done: false },
+  { id: 115, task: "Secure bulk accommodation blocks", months_before: 6, category: "Logistics", done: false },
+  { id: 116, task: "Send print proofs to user", months_before: 5, category: "Graphics", done: false },
+  { id: 117, task: "Coordinate transportation route planning", months_before: 5, category: "Logistics", done: false },
+  { id: 118, task: "Finalize decoration technical drawings", months_before: 4, category: "Decor", done: false },
+  { id: 119, task: "Process vendor deposits", months_before: 4, category: "Finance", done: false },
+  { id: 120, task: "Review entertainment rider requirements", months_before: 4, category: "Artists", done: false },
+  { id: 121, task: "Generate invitation mailing list", months_before: 3, category: "Guests", done: false },
+  { id: 122, task: "Audit food safety certifications", months_before: 3, category: "Food", done: false },
+  { id: 123, task: "Source specialized decor elements", months_before: 3, category: "Decor", done: false },
+  { id: 124, task: "Confirm hair and makeup timing", months_before: 2, category: "Management", done: false },
+  { id: 125, task: "Final transport fleet check", months_before: 2, category: "Logistics", done: false },
+  { id: 126, task: "Assemble wedding day itinerary", months_before: 2, category: "Planning", done: false },
+  { id: 127, task: "Distribute vendor contact sheets", months_before: 1, category: "Management", done: false },
+  { id: 128, task: "Generate final budget actuals report", months_before: 1, category: "Finance", done: false },
+  { id: 129, task: "Lock in all vendor bookings", months_before: 1, category: "Legal", done: false },
+  { id: 130, task: "Review sound and lighting specs", months_before: 1, category: "Technical", done: false },
+  { id: 131, task: "Print place cards and seating charts", months_before: 0.5, category: "Graphics", done: false },
+  { id: 132, task: "Conduct final venue walk-through", months_before: 0.5, category: "Venue", done: false },
+  { id: 133, task: "Brief on-site coordination team", months_before: 0.5, category: "Management", done: false },
+  { id: 134, task: "Prepare vendor final payments", months_before: 0.5, category: "Finance", done: false },
+  { id: 135, task: "Send final itinerary to couple", months_before: 0.5, category: "Planning", done: false },
+  { id: 136, task: "Verify license readiness", months_before: 0.25, category: "Legal", done: false },
+  { id: 137, task: "Conduct dry run for specialty events", months_before: 0.25, category: "Management", done: false },
+  { id: 138, task: "Supervise early venue setup", months_before: 0.25, category: "Venue", done: false },
+  { id: 139, task: "Final briefing with client", months_before: 0.25, category: "Planning", done: false },
+  { id: 140, task: "On-site management: Delivery checks", months_before: 0, category: "Execution", done: false },
+  { id: 141, task: "Review bar stock inventory", months_before: 0.5, category: "Food", done: false },
+  { id: 142, task: "Coordinate gift hampers vendors", months_before: 2, category: "Logistics", done: false },
+  { id: 143, task: "Assign ushers and guest managers", months_before: 1, category: "Management", done: false },
+  { id: 144, task: "Verify power backup status", months_before: 0.25, category: "Technical", done: false },
+  { id: 145, task: "Final check on couple entry SFX", months_before: 0.25, category: "Technical", done: false },
+  { id: 146, task: "Coordinate valet team", months_before: 0.5, category: "Logistics", done: false },
+  { id: 147, task: "Post-wedding cleanup plan", months_before: 1, category: "Management", done: false },
+  { id: 148, task: "Re-verify honeymoon travel docs", months_before: 1, category: "Account", done: false },
+  { id: 149, task: "Secure safe for wedding assets", months_before: 0.25, category: "Execution", done: false },
+  { id: 150, task: "Prepare post-wedding feedback form", months_before: 0.5, category: "Management", done: false },
+];
+
+function AdminChecklistForEvent({ weddingDate, bookingId }) {
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem(`admin_checklist_${bookingId}`)
+    return saved ? JSON.parse(saved) : INITIAL_ADMIN_TASKS
+  })
+
+  useEffect(() => {
+    localStorage.setItem(`admin_checklist_${bookingId}`, JSON.stringify(tasks))
+  }, [tasks, bookingId])
+
+  return (
+    <div style={{ marginBottom: 30 }}>
+      <Checklist 
+        tasks={tasks} 
+        setTasks={setTasks} 
+        title="Event Execution Checklist" 
+        subtitle="Manage end-to-end execution for this specific booking"
+        weddingDate={weddingDate}
+        colorPrimary="#023047"
+      />
+    </div>
+  )
+}
+
+function VendorPaymentsTab() {
+  const [payments, setPayments] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [draft, setDraft] = useState({ vendor_name: '', category: '', total_amount: '', paid_amount: '', due_date: '', payment_mode: 'UPI', notes: '' })
+  const [adding, setAdding] = useState(false)
+  const [toast, showToast] = useToast()
+
+  const load = useCallback(() => {
+    setLoading(true)
+    apiFetchBudget('/payments/')
+      .then(setPayments)
+      .catch(e => showToast(e.message, false))
+      .finally(() => setLoading(false))
+  }, [showToast])
+
+  useEffect(() => { load() }, [load])
+
+  const save = async () => {
+    try {
+      await apiFetchBudget('/payments/', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...draft,
+          id: editing?.id,
+          total_amount: parseFloat(draft.total_amount || 0),
+          paid_amount: parseFloat(draft.paid_amount || 0)
+        }),
+      })
+      showToast(editing ? 'Payment updated' : 'Payment added')
+      setEditing(null)
+      setAdding(false)
+      setDraft({ vendor_name: '', category: '', total_amount: '', paid_amount: '', due_date: '', payment_mode: 'UPI', notes: '' })
+      load()
+    } catch (e) { showToast(e.message, false) }
+  }
+
+  const del = async (id) => {
+    if (!confirm('Delete this record?')) return
+    try {
+      await apiFetchBudget(`/payments/${id}`, { method: 'DELETE' })
+      showToast('Record deleted')
+      load()
+    } catch (e) { showToast(e.message, false) }
+  }
+
+  const startEdit = (p) => {
+    setEditing(p)
+    setDraft({ 
+      vendor_name: p.vendor_name, 
+      category: p.category, 
+      total_amount: p.total_amount, 
+      paid_amount: p.paid_amount, 
+      due_date: p.due_date,
+      payment_mode: p.payment_mode || 'UPI',
+      notes: p.notes || ''
+    })
+    setAdding(false)
+  }
+
+  const DraftRow = () => (
+    <tr style={{ background: '#fffbea' }}>
+      <td style={{ padding: '8px 10px' }}>
+        <input value={draft.vendor_name} onChange={e => setDraft(d => ({ ...d, vendor_name: e.target.value }))} style={inputStyle} placeholder="Vendor" />
+      </td>
+      <td style={{ padding: '8px 10px' }}>
+        <input value={draft.category} onChange={e => setDraft(d => ({ ...d, category: e.target.value }))} style={inputStyle} placeholder="Service/Category" />
+      </td>
+      <td style={{ padding: '8px 10px' }}>
+        <input type="number" value={draft.total_amount} onChange={e => setDraft(d => ({ ...d, total_amount: e.target.value }))} style={inputStyle} placeholder="Total ₹" />
+      </td>
+      <td style={{ padding: '8px 10px' }}>
+        <input type="number" value={draft.paid_amount} onChange={e => setDraft(d => ({ ...d, paid_amount: e.target.value }))} style={inputStyle} placeholder="Paid ₹" />
+      </td>
+      <td style={{ padding: '8px 10px' }}>
+        <input value={draft.due_date} onChange={e => setDraft(d => ({ ...d, due_date: e.target.value }))} style={inputStyle} placeholder="Due Date" />
+      </td>
+      <td style={{ padding: '8px 10px', display: 'flex', gap: 6 }}>
+        <Btn small onClick={save} color={C.green}>Save</Btn>
+        <Btn small onClick={() => { setEditing(null); setAdding(false) }} color="#888">Cancel</Btn>
+      </td>
+    </tr>
+  )
+
+  return (
+    <Card>
+      {toast && <Toast {...toast} />}
+      <SectionTitle> Vendor Payment Tracker</SectionTitle>
+      <div style={{ overflowX: 'auto', width: '100%' }}>
+        <table style={{ width: '100%', minWidth: 800, borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: '#f0f7fc' }}>
+              {['Vendor', 'Category/Service', 'Total Cost', 'Paid', 'Due Date', 'Actions'].map(h => (
+                <th key={h} style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: C.navy, borderBottom: `2px solid ${C.amber}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan="6" style={{ padding: 20, textAlign: 'center' }}>Loading...</td></tr>
+            ) : (
+              payments.map((p, i) => (
+                editing?.id === p.id ? <DraftRow key={p.id} /> :
+                <tr key={p.id} style={{ background: i % 2 === 0 ? 'white' : '#f9fbfd' }}>
+                  <td style={{ padding: '10px', fontWeight: 600 }}>{p.vendor_name}</td>
+                  <td style={{ padding: '10px' }}>{p.category}</td>
+                  <td style={{ padding: '10px' }}>{formatRupees(p.total_amount)}</td>
+                  <td style={{ padding: '10px', color: C.green, fontWeight: 700 }}>{formatRupees(p.paid_amount)}</td>
+                  <td style={{ padding: '10px' }}>{p.due_date || '—'}</td>
+                  <td style={{ padding: '8px 10px', display: 'flex', gap: 6 }}>
+                    <Btn small onClick={() => startEdit(p)} color={C.blue}>Edit</Btn>
+                    <Btn small onClick={() => del(p.id)} color={C.red}>Del</Btn>
+                  </td>
+                </tr>
+              ))
+            )}
+            {adding && !editing && <DraftRow key="new" />}
+          </tbody>
+        </table>
+      </div>
+      {!adding && !editing && (
+        <div style={{ marginTop: 14 }}>
+          <Btn onClick={() => { setAdding(true); setDraft({ vendor_name: '', category: '', total_amount: '', paid_amount: '', due_date: '', payment_mode: 'UPI', notes: '' }) }} color={C.amber} textColor={C.navy}>+ Add Payment Entry</Btn>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+// ── Tab: Vendor Management ─────────────────────────────────────────────────────
+function VendorsTab() {
+  const [vendors, setVendors] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [toast, showToast] = useToast()
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await apiFetchBudget('/vendors/admin/all', {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      })
+      setVendors(Array.isArray(data) ? data : [])
+    } catch (e) {
+      showToast(e.message, false)
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
+
+  useEffect(() => { load() }, [load])
+
+  const approve = async (id) => {
+    try {
+      await apiFetchBudget(`/vendors/admin/approve/${id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${getToken()}` }
+      })
+      showToast('Vendor approved')
+      load()
+    } catch (e) { showToast(e.message, false) }
+  }
+
+  const del = async (id) => {
+    if (!confirm('Delete this vendor?')) return
+    try {
+      await apiFetchBudget(`/vendors/admin/delete/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` }
+      })
+      showToast('Vendor deleted')
+      load()
+    } catch (e) { showToast(e.message, false) }
+  }
+
+  return (
+    <Card>
+      {toast && <Toast {...toast} />}
+      <SectionTitle> Vendor Management</SectionTitle>
+      {loading ? (
+        <div style={{ color: '#888', fontSize: 13 }}>Loading...</div>
+      ) : vendors.length === 0 ? (
+        <div style={{ color: '#888', fontSize: 13 }}>No vendors registered yet.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#f0f7fc' }}>
+                {['Business', 'Category', 'City', 'Contact', 'Status', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: C.navy, borderBottom: `2px solid ${C.amber}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {vendors.map((v, i) => (
+                <tr key={v.id} style={{ background: i % 2 === 0 ? 'white' : '#f9fbfd' }}>
+                  <td style={{ padding: '10px' }}>
+                    <div style={{ fontWeight: 700 }}>{v.business}</div>
+                    <div style={{ fontSize: 11, color: '#666' }}>{v.name}</div>
+                  </td>
+                  <td style={{ padding: '10px' }}>{v.category}</td>
+                  <td style={{ padding: '10px' }}>{v.city}</td>
+                  <td style={{ padding: '10px' }}>{v.contact}</td>
+                  <td style={{ padding: '10px' }}>
+                    <span style={{
+                      padding: '4px 8px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+                      background: v.is_approved ? '#f0fdf4' : '#fff7ed',
+                      color: v.is_approved ? C.green : '#c2410c'
+                    }}>
+                      {v.is_approved ? 'Approved' : 'Pending'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px', display: 'flex', gap: 6 }}>
+                    {!v.is_approved && (
+                      <Btn small onClick={() => approve(v.id)} color={C.green}>Approve</Btn>
+                    )}
+                    <Btn small onClick={() => del(v.id)} color={C.red}>Delete</Btn>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── Main AdminPage ─────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'finalized', label: ' Finalized Budgets' },
+  { id: 'vendors', label: ' Vendor Approval' },
   { id: 'artists', label: ' Artists' },
   { id: 'fb', label: ' F&B Rates' },
   { id: 'logistics', label: ' Logistics' },
   { id: 'decor', label: ' Decor Labels' },
   { id: 'rules', label: ' Budget Rules' },
   { id: 'tracker', label: ' Budget Tracker' },
+  { id: 'payments', label: ' Vendor Payments' },
+  { id: 'crm', label: ' CRM / Leads' },
   { id: 'settings', label: ' Settings' },
 ]
 
@@ -1133,7 +1721,7 @@ export default function AdminPage({ onClose }) {
       </div>
 
       {/* Tab bar */}
-      <div style={{ background: 'white', borderBottom: '1px solid #EBEBEB', padding: '0 28px', display: 'flex', gap: 2 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid #EBEBEB', padding: '0 28px', display: 'flex', gap: 2, overflowX: 'auto' }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
             padding: '14px 18px', border: 'none', cursor: 'pointer', background: 'transparent',
@@ -1141,7 +1729,8 @@ export default function AdminPage({ onClose }) {
             fontSize: 13,
             color: activeTab === tab.id ? C.navy : '#888',
             borderBottom: activeTab === tab.id ? `3px solid ${C.amber}` : '3px solid transparent',
-            fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s'
+            fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+            whiteSpace: 'nowrap'
           }}>{tab.label}</button>
         ))}
       </div>
@@ -1149,12 +1738,15 @@ export default function AdminPage({ onClose }) {
       {/* Content */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
         {activeTab === 'finalized' && <FinalizedBudgetsTab />}
+        {activeTab === 'vendors' && <VendorsTab />}
         {activeTab === 'artists' && <ArtistsTab />}
         {activeTab === 'fb' && <FBRatesTab />}
         {activeTab === 'logistics' && <LogisticsTab />}
         {activeTab === 'decor' && <DecorLabelsTab />}
         {activeTab === 'rules' && <BudgetRulesTab />}
         {activeTab === 'tracker' && <BudgetTrackerTab />}
+        {activeTab === 'payments' && <VendorPaymentsTab />}
+        {activeTab === 'crm' && <CRMTab />}
         {activeTab === 'settings' && <SettingsTab onLogout={logout} />}
       </div>
     </div>

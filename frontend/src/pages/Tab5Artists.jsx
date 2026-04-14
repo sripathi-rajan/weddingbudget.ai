@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useWedding, ARTIST_TYPES, NAMED_ARTISTS, ALL_EVENTS, formatRupees } from '../context/WeddingContext'
 import { scrollToNextSection } from '../utils/scrollToNext'
+import { API_BASE } from '../utils/config'
+import { ImageCard } from '../components/ImageCard'
 
 const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4fa', sky: '#8ecae6', orange: '#fb8500' }
 
@@ -25,62 +27,18 @@ const ARTIST_COST_MAP = {
 }
 
 function ArtistCard({ artist, isSelected, onToggle, hasAnySelected }) {
-  const [imgErr, setImgErr] = useState(false)
   const [lo, hi] = ARTIST_COST_MAP[artist.id] || [0, 0]
-  const fallback = '#334155'
-
   return (
-    <div
+    <ImageCard
+      item={artist}
+      selected={isSelected}
       onClick={() => onToggle(artist)}
-      className={`sel-card${isSelected ? ' selected' : ''}${hasAnySelected && !isSelected ? ' dimmed' : ''}`}
-      style={{
-        border: isSelected ? '2px solid #C9A84C' : '2px solid #e5e7eb',
-        borderRadius: 12,
-        overflow: 'hidden',
-        background: '#fff',
-        minHeight: 0,
-        boxShadow: isSelected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-        transition: 'all 0.2s ease',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        textAlign: 'center',
-      }}
-    >
-      <div style={{ width: '100%', height: 110, background: fallback, lineHeight: 0, overflow: 'hidden' }}>
-        {artist.imageUrl && !imgErr ? (
-          <img
-            src={artist.imageUrl}
-            alt=""
-            onError={() => setImgErr(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-        ) : (
-          <div style={{
-            width: '100%', height: '100%', display: 'flex',
-            alignItems: 'center', justifyContent: 'center'
-          }}>
-            <div className="sel-card-icon" style={{ fontSize: 28 }}>{artist.emoji}</div>
-          </div>
-        )}
-      </div>
-      <div style={{ width: '100%', textAlign: 'center', padding: '12px 12px 14px' }}>
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#111' }}>{artist.label}</div>
-        <div style={{ fontSize: 12, color: '#4b5563', fontWeight: 700 }}>
-          {formatRupees(lo)} – {formatRupees(hi)}
-        </div>
-      </div>
-      {/* Rose checkmark badge */}
-      <div style={{
-        position: 'absolute', top: 8, right: 8, width: 24, height: 24,
-        background: '#C9A84C', borderRadius: '50%', color: '#111',
-        alignItems: 'center', justifyContent: 'center',
-        fontSize: 12, fontWeight: 'bold',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-        display: isSelected ? 'flex' : 'none',
-        animation: isSelected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
-      }}>✓</div>
-    </div>
+      hasAnySelected={hasAnySelected}
+      badge="ARTIST"
+      location="Professional"
+      budget={`${formatRupees(lo)} – ${formatRupees(hi)}`}
+      actionLabel="Book Artist"
+    />
   )
 }
 
@@ -196,6 +154,14 @@ export default function Tab5Artists() {
   const { wedding, update } = useWedding()
   const [selected, setSelected] = useState([])
   const [namedArtistBookings, setNamedArtistBookings] = useState([])  // [{namedId, negotiated}]
+  const [dbArtists, setDbArtists] = useState([])
+
+  useEffect(() => {
+    fetch(`${API_BASE}/vendors/approved?category=Artist`)
+      .then(res => res.json())
+      .then(data => setDbArtists(data))
+      .catch(err => console.error("Error fetching db artists:", err))
+  }, [])
 
   const toggle = (artist) => {
     const exists = selected.find(s => s.id === artist.id)
@@ -236,10 +202,24 @@ export default function Tab5Artists() {
     return sum + (lo + hi) / 2
   }, 0) + namedArtistBookings.reduce((s, b) => {
     if (b.negotiated) return s + b.negotiated
+    
+    // Check if it's a database vendor
+    if (b.namedId.startsWith('db_')) {
+      const vendorId = parseInt(b.namedId.split('_')[1])
+      const v = dbArtists.find(x => x.id === vendorId)
+      if (v) {
+        // Simple heuristic: extract first number from price_range
+        const matches = (v.price_range || '').match(/(\d+)/g)
+        if (matches && matches.length > 0) return s + parseInt(matches[0])
+      }
+      return s + 50000 // default fallback
+    }
+
     const na = NAMED_ARTISTS.find(a => a.id === b.namedId)
     return s + (na ? (na.fee_low + na.fee_high) / 2 : 0)
   }, 0)
-  const total = Math.round(baseTotal * (wedding.cost_multipliers?.['Artists & Entertainment'] || 1))
+  const multiplier = wedding?.cost_multipliers?.['Artists & Entertainment'] ?? 1
+  const total = Math.round(baseTotal * multiplier)
 
   return (
     <div>
@@ -252,43 +232,58 @@ export default function Tab5Artists() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {NAMED_ARTISTS.map(na => {
             const isBooked = !!namedArtistBookings.find(b => b.namedId === na.id)
-            const booking = namedArtistBookings.find(b => b.namedId === na.id)
             return (
-              <div key={na.id} style={{ border: `2px solid ${isBooked ? C.amber : C.sky}`, borderRadius: 14,
-                background: isBooked ? '#fffbea' : 'white', padding: 14, transition: 'all 0.2s' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: C.primary }}>{na.name}</div>
-                    <div style={{ fontSize: 11, color: C.blue, fontWeight: 600 }}>{na.genre}</div>
-                    <div style={{ fontSize: 12, color: '#7a5900', marginTop: 2 }}>
-                      {formatRupees(na.fee_low)} – {formatRupees(na.fee_high)}
-                    </div>
-                  </div>
-                  <button onClick={() => toggleNamedArtist(na)}
-                    style={{ padding: '5px 12px', borderRadius: 10,
-                      background: isBooked ? '#dc2626' : `linear-gradient(135deg, ${C.amber}, ${C.orange})`,
-                      border: 'none', color: isBooked ? 'white' : C.primary,
-                      fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-                    {isBooked ? '✕ Remove' : '+ Book'}
-                  </button>
-                </div>
-                {isBooked && (
-                  <div style={{ marginTop: 8 }}>
-                    <label style={{ fontSize: 11, color: C.primary, fontWeight: 600 }}>Negotiated Fee (₹):</label>
-                    <input type="number" min={0}
-                      value={booking?.negotiated || ''}
-                      placeholder={`${Math.round((na.fee_low + na.fee_high) / 2)}`}
-                      onChange={e => setNamedFee(na.id, parseInt(e.target.value) || 0)}
-                      style={{ width: '100%', marginTop: 4, padding: '5px 8px',
-                        border: `1.5px solid ${C.amber}`, borderRadius: 8, fontSize: 12,
-                        fontFamily: 'Inter,sans-serif', fontWeight: 700 }} />
-                  </div>
-                )}
-              </div>
+              <ImageCard
+                key={na.id}
+                item={{
+                  ...na,
+                  label: na.name,
+                  imageUrl: na.imageUrl || `https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80`
+                }}
+                selected={isBooked}
+                onClick={() => toggleNamedArtist(na)}
+                badge="CELEBRITY"
+                location={na.genre}
+                budget={`${formatRupees(na.fee_low)} – ${formatRupees(na.fee_high)}`}
+                actionLabel="Book Celebrity"
+              />
             )
           })}
         </div>
       </div>
+
+      {/* Database Vendors (Approved) */}
+      {dbArtists.length > 0 && (
+        <div className="section-card">
+          <div className="section-title"> Professional Vendors <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Registered)</span></div>
+          <div style={{ fontSize: 13, color: '#4a7a94', marginBottom: 14 }}>
+            Directly book registered professionals. Verified contact details and portfolios included.
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+            {dbArtists.map(v => {
+              const booking = namedArtistBookings.find(b => b.namedId === `db_${v.id}`)
+              const isBooked = !!booking
+              return (
+                <ImageCard
+                  key={v.id}
+                  item={{
+                    id: `db_${v.id}`,
+                    label: v.business,
+                    imageUrl: v.imageUrl || v.image_url || `https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=250&fit=crop`,
+                    emoji: '🎸'
+                  }}
+                  selected={isBooked}
+                  onClick={() => toggleNamedArtist({ id: `db_${v.id}` })}
+                  badge="VERIFIED"
+                  location={v.city}
+                  budget={v.price_range}
+                  actionLabel="Book Service"
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Generic Artist Types */}
       <div className="section-card" data-section="artist-tier">
@@ -325,17 +320,34 @@ export default function Tab5Artists() {
             border: `2px solid ${C.amber}` }}>
             <div className="section-title" style={{ color: C.primary }}> Entertainment Budget</div>
             {namedArtistBookings.map(b => {
-              const na = NAMED_ARTISTS.find(a => a.id === b.namedId)
-              if (!na) return null
-              const fee = b.negotiated || Math.round((na.fee_low + na.fee_high) / 2)
+              let name, genre, fee, typeLabel
+              
+              if (b.namedId.startsWith('db_')) {
+                const vendorId = parseInt(b.namedId.split('_')[1])
+                const v = dbArtists.find(x => x.id === vendorId)
+                if (!v) return null
+                name = v.business
+                genre = `${v.category} · ${v.city}`
+                typeLabel = 'Professional Vendor'
+                const matches = (v.price_range || '').match(/(\d+)/g)
+                fee = b.negotiated || (matches ? parseInt(matches[0]) : 50000)
+              } else {
+                const na = NAMED_ARTISTS.find(a => a.id === b.namedId)
+                if (!na) return null
+                name = na.name
+                genre = na.genre
+                typeLabel = 'Named Artist'
+                fee = b.negotiated || Math.round((na.fee_low + na.fee_high) / 2)
+              }
+
               return (
                 <div key={b.namedId} style={{ display: 'flex', justifyContent: 'space-between',
                   padding: '10px 0', borderBottom: `1px solid ${C.sky}`, alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     <span style={{ fontSize: 22 }}></span>
                     <div>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: C.primary }}>{na.name}</span>
-                      <div style={{ fontSize: 11, color: C.blue }}>{na.genre} • Named Artist</div>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: C.primary }}>{name}</span>
+                      <div style={{ fontSize: 11, color: C.blue }}>{genre} • {typeLabel}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: 15, color: b.negotiated ? '#047857' : C.blue, fontWeight: 800 }}>
@@ -386,9 +398,9 @@ export default function Tab5Artists() {
               </span>
               <span style={{ fontFamily: 'EB Garamond, serif', fontSize: 28, fontWeight: 800, color: '#7a5900' }}>
                 {formatRupees(total)}
-                {(wedding.cost_multipliers?.['Artists & Entertainment'] || 1) !== 1 && (
+                {multiplier !== 1 && (
                   <span style={{ fontSize: 10, display: 'block', textAlign: 'right', fontWeight: 400, opacity: 0.8 }}>
-                    (AI Optimised ×{wedding.cost_multipliers['Artists & Entertainment'].toFixed(2)})
+                    (AI Optimised ×{Number(multiplier).toFixed(2)})
                   </span>
                 )}
               </span>

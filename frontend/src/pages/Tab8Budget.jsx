@@ -307,11 +307,11 @@ function ConfidenceBar({ score }) {
 
 // ─── WhatsApp Text Generator ─────────────────────────────────────────────
 const generateWhatsAppText = (budgetData) => {
-  const text = `💍 *WeddingBudget.AI Estimate*
+  const text = `*WeddingBudget.AI Estimate*
 
-💰 *Total: ₹${budgetData.total}*
-📊 Range: ₹${budgetData.rangeMin} – ₹${budgetData.rangeMax}
-🎯 Confidence: ${budgetData.confidence}%
+*Total: ₹${budgetData.total}*
+Range: ₹${budgetData.rangeMin} – ₹${budgetData.rangeMax}
+Confidence: ${budgetData.confidence}%
 
 *Breakdown:*
 • Wedding Type Base: ₹${budgetData.breakdown.base}
@@ -346,107 +346,52 @@ export default function Tab8Budget() {
   const [expanded, setExpanded] = useState(new Set())
   const [activeScen, setActiveScen] = useState('Standard')
   const [submitted, setSubmitted] = useState(false)
-  const [finalised, setFinalised] = useState(false)
-  const [isFinalizing, setIsFinalizing] = useState(false)
 
   const [rlStats, setRlStats] = useState(null)
   const [budget_tracker, setBudgetTracker] = useState([]) // [{ category, actual }]
   const [toast, setToast] = useState(null) // {msg, type}
+  const [isFinalizing, setIsFinalizing] = useState(false)
 
-  const handleApplyOptimization = (category, optimizedValue) => {
-    const current = budget?.items?.[category]?.mid || 0
-    if (current === 0) return
-    const ratio = optimizedValue / current
-    const newMultipliers = { ...wedding.cost_multipliers, [category]: (wedding.cost_multipliers[category] || 1) * ratio }
-    update('cost_multipliers', newMultipliers)
-    const TAB_MAPPING = {
-      'Venue': 1,
-      'Accommodation': 1,
-      'Food & Beverages': 3,
-      'Decor & Design': 2,
-      'Artists & Entertainment': 4,
-      'Logistics & Transport': 6,
-      'Sundries & Basics': 5,
-    }
-    const targetTab = TAB_MAPPING[category] ?? 7
-    window.dispatchEvent(new CustomEvent('weddingGoToTab', { detail: targetTab }))
-  }
-
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
-  }
-
-  const fetchRlStats = async () => {
+  const handleFinalize = async () => {
+    if (wedding.finalised) return
+    setIsFinalizing(true)
     try {
-      const res = await fetch(`${API}/budget/rl-stats`)
-      if (res.ok) setRlStats(await res.json())
-    } catch {
-      /* non-fatal */
-    }
-  }
-
-  useEffect(() => {
-    fetchRlStats()
-  }, [])
-
-  const handleFinalize = useCallback(async () => {
-    // 1. Validation
-    if (!budget || !budget.total || (budget.total.mid || 0) <= 0) {
-      showToast("Please generate your budget estimate first.", "error");
-      return;
-    }
-
-    // Check if essential selections are made
-    const errors = [];
-    if (!wedding.user_name) errors.push("Your Name");
-    if (!wedding.wedding_type) errors.push("Wedding Type");
-    if (!wedding.wedding_date) errors.push("Wedding Date");
-    if (!wedding.total_guests || wedding.total_guests < 1) errors.push("Guest Count");
-    if (!wedding.selected_decor?.length) errors.push("Decor Selections from AI Gallery");
-
-    if (errors.length > 0) {
-      showToast(`Missing details: ${errors.join(", ")}`, "error");
-      return;
-    }
-
-    setIsFinalizing(true);
-    try {
-      const response = await fetch(`${API}/budget/finalise`, {
+      const payload = {
+        user_name: wedding.user_name || 'Anonymous User',
+        total: budget.total,
+        created_at: new Date().toISOString(),
+        wedding_profile: { ...wedding, budget_result: budget }
+      }
+      const res = await fetch(`${API}/budget/finalise`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          total: budget.total,
-          wedding_profile: wedding,
-          finalized_at: new Date().toISOString()
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        const result = await res.json()
+        if (result.success) {
+          update('finalised', true)
+          setToast({ msg: 'Wedding plan finalised successfully!', type: 'success' })
+        } else {
+          setToast({ msg: 'Finalisation error: ' + (result.error || 'Unknown error'), type: 'error' })
+        }
+      } else {
+        const errText = await res.text()
+        setToast({ msg: `Finalisation failed: ${res.status}`, type: 'error' })
       }
-
-      // Success
-      setFinalised(true);
-      setSubmitted(true);
-      showToast("Budget finalized and sent to admin successfully!");
-
-      localStorage.setItem('wedding_finalized', 'true');
-      localStorage.setItem('final_budget_total', budget.total.mid.toString());
-
     } catch (err) {
-      console.error('Finalization failed:', err);
-      showToast(err.message || "Failed to finalize budget. Please check your connection and try again.", "error");
+      setToast({ msg: 'Connection error: ' + err.message, type: 'error' })
     } finally {
-      setIsFinalizing(false);
+      setIsFinalizing(false)
     }
-  }, [budget, wedding, API])
+  }
 
   useEffect(() => {
-    const finaliseListener = () => handleFinalize()
-    window.addEventListener('weddingFinalize', finaliseListener)
-    return () => window.removeEventListener('weddingFinalize', finaliseListener)
-  }, [handleFinalize])
+    if (wedding.finalised) {
+      setSubmitted(true)
+    }
+  }, [wedding.finalised])
+
 
   const midTotal = budget?.total?.mid || 0
   const displayTotal = useCountUp(midTotal, 800)
@@ -484,6 +429,7 @@ export default function Tab8Budget() {
         })
       }
       setBudget(data)
+      update('budget_result', data)
       setScenarios(scenData)
     } catch (e) {
       console.error('Budget calculation failed', e)
@@ -514,7 +460,27 @@ export default function Tab8Budget() {
       const totLow = Object.values(items).reduce((s, i) => s + i.low, 0)
       const totMid = Object.values(items).reduce((s, i) => s + i.mid, 0)
       const totHigh = Object.values(items).reduce((s, i) => s + i.high, 0)
-      setBudget({ items, total: { low: totLow, mid: totMid, high: totHigh }, confidence_score: 0.72, total_guests, events })
+      const result = { items, total: { low: totLow, mid: totMid, high: totHigh }, confidence_score: 0.72, total_guests, events }
+
+      // Manual overrides for fallback
+      const manual = wedding.manual_category_budgets || {}
+      Object.entries(manual).forEach(([cat, val]) => {
+        if (val && typeof val === 'number') {
+          result.items[cat] = {
+            low: val * 0.95, mid: val, high: val * 1.05,
+            note: 'Manual entry override', sub_items: []
+          }
+        }
+      })
+      const recMid = Object.values(result.items).reduce((s, i) => s + i.mid, 0)
+      result.total = {
+        low: Object.values(result.items).reduce((s, i) => s + i.low, 0),
+        mid: recMid,
+        high: Object.values(result.items).reduce((s, i) => s + i.high, 0)
+      }
+
+      setBudget(result)
+      update('budget_result', result)
       setScenarios(null)
     } finally {
       setLoading(false)
@@ -717,15 +683,15 @@ export default function Tab8Budget() {
         {budget && (
           <button
             onClick={handleFinalize}
-            disabled={isFinalizing}
+            disabled={isFinalizing || wedding.finalised}
             style={{
               marginTop: 12, width: '100%', padding: '13px 0', borderRadius: 10,
-              background: finalised ? '#16A34A' : '#111', color: '#fff', border: 'none',
-              cursor: isFinalizing ? 'wait' : 'pointer',
+              background: wedding.finalised ? '#16A34A' : '#111', color: '#fff', border: 'none',
+              cursor: (isFinalizing || wedding.finalised) ? 'not-allowed' : 'pointer',
               fontWeight: 700, fontSize: 15, transition: 'background 0.3s ease',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
             }}>
-            {isFinalizing ? 'Saving...' : finalised ? ' Finalised' : ' Finalise & Submit →'}
+            {isFinalizing ? 'Saving...' : wedding.finalised ? ' Finalised' : ' Finalise & Submit →'}
           </button>
         )}
       </div>
@@ -750,7 +716,7 @@ export default function Tab8Budget() {
             fontWeight: 800, color: '#fff',
             lineHeight: 1, letterSpacing: '-0.04em'
           }}>
-            ₹{(displayTotal / 100000).toFixed(1)}L
+            ₹{((displayTotal || 0) / 100000).toFixed(1)}L
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 8 }}>
             {formatRupees((budget?.total?.low || 0))} – {formatRupees((budget?.total?.high || 0))} range
@@ -956,7 +922,7 @@ export default function Tab8Budget() {
 
         <div className="section-card" style={{ border: '2px solid #ffb703' }}>
           <div className="section-title" style={{ color: '#023047' }}>
-            AI Budget Optimizer
+            Plan within my budget? (AI Budget Optimizer)
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
@@ -1132,13 +1098,13 @@ export default function Tab8Budget() {
             </div>
 
             <h2 style={{ fontWeight: 700, color: '#111', fontSize: 24, marginBottom: 10, textAlign: 'center' }}>
-              Thank you! ✨
+              Thank you!
             </h2>
             <p style={{
               color: '#555', fontSize: 15, textAlign: 'center', maxWidth: 340,
               lineHeight: 1.6, marginBottom: 28, fontWeight: 500
             }}>
-              Your wedding budget plan has been successfully finalized. 
+              Your wedding budget plan has been successfully finalized.
               Our decorators and planners will review it and get in touch with you shortly.
             </p>
 
@@ -1168,7 +1134,7 @@ export default function Tab8Budget() {
               <button onClick={() => window.location.href = '/'}
                 style={{
                   padding: '14px 28px', borderRadius: 12, border: 'none',
-                  background: 'linear-gradient(135deg, #111, #333)', color: '#fff', 
+                  background: 'linear-gradient(135deg, #111, #333)', color: '#fff',
                   fontWeight: 700, fontSize: 14, cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>

@@ -141,6 +141,7 @@ export const VENUE_TYPES = [
   { id: "Farmhouse",       imageUrl: "https://images.unsplash.com/photo-1500076656116-558758c991c1?w=400&q=80", emoji: "", label: "Farmhouse & Estate" },
   { id: "Temple",          imageUrl: "https://images.unsplash.com/photo-1588416936097-41850ab3d86d?w=400&q=80", emoji: "",  label: "Temple Venue" },
   { id: "Home Intimate",   imageUrl: "https://images.unsplash.com/photo-1560440021-33f9b867899d?w=400&q=80",   emoji: "", label: "Home / Intimate" },
+  { id: "Hill Station",     imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80", emoji: "", label: "Hill Station" },
 ]
 
 export const HOTEL_TIERS = [
@@ -174,7 +175,7 @@ export const SPECIALTY_COUNTERS = [
   { id: "Mocktail",          imageUrl: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=250&fit=crop",  emoji: "", label: "Mocktail Bar",     cost: "₹90/head",  rate_per_head: 90 },
   { id: "Ice Cream",         imageUrl: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400&h=250&fit=crop",  emoji: "", label: "Ice Cream Station", cost: "₹55/head",  rate_per_head: 55 },
   { id: "Tea-Coffee (24hr)", imageUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=250&fit=crop",             emoji: "", label: "Tea-Coffee 24hr",  cost: "₹35/head",  rate_per_head: 35 },
-  { id: "Paan Counter",      imageUrl: "https://images.unsplash.com/photo-1627056604886-ef06a14c1cd3?w=400&h=250&fit=crop", emoji: "", label: "Paan Counter",     cost: "₹45/head",  rate_per_head: 45 },
+  { id: "Paan Counter",      imageUrl: "/food-images/paan-counter.png", emoji: "", label: "Paan Counter",     cost: "₹45/head",  rate_per_head: 45 },
   { id: "Fruit Station",     imageUrl: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=250&fit=crop", emoji: "", label: "Fruit Station",    cost: "₹65/head",  rate_per_head: 65 },
 ]
 
@@ -200,16 +201,16 @@ export const ARTIST_TYPES = [
 
 // Named artists with specific fee ranges (admin-maintained)
 export const NAMED_ARTISTS = [
-  { id: "na_arijit",   name: "Arijit Singh",         genre: "Bollywood",  fee_low: 4000000, fee_high: 7000000 },
-  { id: "na_neha",     name: "Neha Kakkar",           genre: "Bollywood",  fee_low: 1500000, fee_high: 3000000 },
-  { id: "na_badshah",  name: "Badshah",               genre: "Bollywood",  fee_low: 2000000, fee_high: 4000000 },
-  { id: "na_jubin",    name: "Jubin Nautiyal",        genre: "Bollywood",  fee_low: 1200000, fee_high: 2500000 },
-  { id: "na_hardy",    name: "Hardy Sandhu",          genre: "Punjabi",    fee_low: 1000000, fee_high: 2000000 },
-  { id: "na_kanika",   name: "Kanika Kapoor",         genre: "Bollywood",  fee_low: 800000,  fee_high: 1800000 },
-  { id: "na_tony",     name: "Tony Kakkar",           genre: "Bollywood",  fee_low: 600000,  fee_high: 1200000 },
-  { id: "na_harrdy",   name: "Harrdy Sandhu",         genre: "Punjabi",    fee_low: 1000000, fee_high: 2000000 },
-  { id: "na_djchetas", name: "DJ Chetas",             genre: "DJ",         fee_low: 1500000, fee_high: 3000000 },
-  { id: "na_anmol",    name: "Anmol Gagan Maan",      genre: "Punjabi",    fee_low: 500000,  fee_high: 1200000 },
+  { id: "na_arijit",   name: "Arijit Singh",         genre: "Bollywood",  fee_low: 4000000, fee_high: 7000000, imageUrl: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&q=80" },
+  { id: "na_neha",     name: "Neha Kakkar",           genre: "Bollywood",  fee_low: 1500000, fee_high: 3000000, imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=80" },
+  { id: "na_badshah",  name: "Badshah",               genre: "Bollywood",  fee_low: 2000000, fee_high: 4000000, imageUrl: "https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=400&q=80" },
+  { id: "na_jubin",    name: "Jubin Nautiyal",        genre: "Bollywood",  fee_low: 1200000, fee_high: 2500000, imageUrl: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&q=80" },
+  { id: "na_hardy",    name: "Hardy Sandhu",          genre: "Punjabi",    fee_low: 1000000, fee_high: 2000000, imageUrl: "https://images.unsplash.com/photo-1619983081563-430f63602796?w=400&q=80" },
+  { id: "na_kanika",   name: "Kanika Kapoor",         genre: "Bollywood",  fee_low: 800000,  fee_high: 1800000, imageUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&q=80" },
+  { id: "na_tony",     name: "Tony Kakkar",           genre: "Bollywood",  fee_low: 600000,  fee_high: 1200000, imageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80" },
+  { id: "na_harrdy",   name: "Harrdy Sandhu",         genre: "Punjabi",    fee_low: 1000000, fee_high: 2000000, imageUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&q=80" },
+  { id: "na_djchetas", name: "DJ Chetas",             genre: "DJ",         fee_low: 1500000, fee_high: 3000000, imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&q=80" },
+  { id: "na_anmol",    name: "Anmol Gagan Maan",      genre: "Punjabi",    fee_low: 500000,  fee_high: 1200000, imageUrl: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&q=80" },
 ]
 
 export const SFX_ITEMS = [
@@ -302,6 +303,7 @@ export const initialWeddingState = {
   budget_tier: '',
   events: [],
   // Tab 2
+  vibe: '',
   venue_type: '',
   wedding_state: '',
   wedding_district: '',
@@ -362,6 +364,7 @@ export const initialWeddingState = {
   groom_travel_distance_km: 0,
   // Budget
   budget_result: null,
+  manual_category_budgets: {}, // { categoryName: amount }
   cost_multipliers: {
     'Venue': 1,
     'Food & Beverages': 1,
@@ -371,6 +374,7 @@ export const initialWeddingState = {
     'Logistics & Transport': 1,
     'Sundries & Basics': 1,
   },
+  finalised: false,
 }
 
 export function WeddingProvider({ children }) {
@@ -398,9 +402,12 @@ export function WeddingProvider({ children }) {
 export const useWedding = () => useContext(WeddingContext)
 
 export const formatRupees = (n) => {
-  if (!n || n === 0) return '₹0'
-  if (n >= 10000000) return `₹${(n/10000000).toFixed(1)}Cr`
-  if (n >= 100000)   return `₹${(n/100000).toFixed(1)}L`
-  if (n >= 1000)     return `₹${(n/1000).toFixed(0)}K`
-  return `₹${Math.round(n)}`
+  if (n === undefined || n === null || isNaN(n) || n === 0) return '₹0'
+  const val = Math.abs(parseFloat(n))
+  let result = ''
+  if (val >= 10000000) result = `₹${(val / 10000000).toFixed(2)} Cr`
+  else if (val >= 100000) result = `₹${(val / 100000).toFixed(2)} L`
+  else if (val >= 1000) result = `₹${(val / 1000).toFixed(1)} K`
+  else result = `₹${Math.round(val).toLocaleString('en-IN')}`
+  return n < 0 ? `-${result}` : result
 }

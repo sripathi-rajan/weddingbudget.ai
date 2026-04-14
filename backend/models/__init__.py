@@ -123,3 +123,61 @@ class FinalizedBudget(Base):
     total_mid       = Column(Float, nullable=False)
     wedding_profile = Column(Text, nullable=False)  # JSON string
     created_at      = Column(DateTime, server_default=func.now())
+
+
+class Vendor(Base):
+    __tablename__ = "vendors"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    name         = Column(String(255), nullable=False)
+    business     = Column(String(255), nullable=False)
+    city         = Column(String(100), nullable=False)
+    category     = Column(String(100), nullable=False)
+    portfolio    = Column(Text, nullable=True)  # Store as JSON list of URLs/paths
+    price_range  = Column(String(100), nullable=False)
+    contact      = Column(String(255), nullable=False)
+    is_approved  = Column(Boolean, nullable=False, default=False)
+    created_at   = Column(DateTime, server_default=func.now())
+
+
+class VendorPayment(Base):
+    __tablename__ = "vendor_payments"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    vendor     = Column(String(255), nullable=False)
+    service    = Column(String(255), nullable=False)
+    total_cost = Column(Float, nullable=False)
+    paid       = Column(Float, nullable=False, default=0)
+    due_date   = Column(String(100), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class PaymentLog(Base):
+    __tablename__ = "payment_logs"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    category     = Column(String(100), nullable=False)
+    vendor_name  = Column(String(255), nullable=True)
+    total_amount = Column(Float, nullable=False, default=0.0)
+    paid_amount  = Column(Float, nullable=False, default=0.0)
+    due_date     = Column(String(100), nullable=True)
+    payment_mode = Column(String(50), nullable=True) # cash/UPI/cheque
+    notes        = Column(Text, nullable=True)
+    created_at   = Column(DateTime, server_default=func.now())
+
+
+class CRMLead(Base):
+    __tablename__ = "crm_leads"
+
+    id                = Column(Integer, primary_key=True, index=True)
+    name              = Column(String(255), nullable=False)
+    email             = Column(String(255), nullable=True)
+    phone             = Column(String(20), nullable=True)
+    wedding_date      = Column(String(100), nullable=True)
+    budget            = Column(Float, nullable=True)
+    source            = Column(String(100), default="Wizard") # Wizard, Direct, etc.
+    status            = Column(String(50), default="New") # New, Contacted, In-Progress, Converted, Lost
+    priority          = Column(String(20), default="Medium") # Low, Medium, High
+    notes             = Column(Text, nullable=True)
+    last_contacted_at = Column(DateTime, nullable=True)
+    created_at        = Column(DateTime, server_default=func.now())

@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from routers import wedding_config, budget, decor, food, artists, logistics, sundries, admin
+from routers import wedding_config, budget, decor, food, artists, logistics, sundries, admin, payments, vendors, crm
 import uvicorn, os
 
 
@@ -83,12 +83,20 @@ app.include_router(artists.router,        prefix="/api/artists",   tags=["Artist
 app.include_router(logistics.router,      prefix="/api/logistics", tags=["Logistics"])
 app.include_router(sundries.router,       prefix="/api/sundries",  tags=["Sundries"])
 app.include_router(admin.router,          prefix="/api/admin",     tags=["Admin"])
+app.include_router(payments.router,       prefix="/api/payments",  tags=["Payments"])
+app.include_router(vendors.router,        prefix="/api/vendors",   tags=["Vendors"])
+app.include_router(crm.router,            prefix="/api/admin/crm", tags=["CRM"])
 
 # Serve decor images from the dataset.
 # Keep both URL spellings for backwards compatibility.
-_decor_images_dir = os.path.join(os.path.dirname(__file__), "..", "decor_dataset", "data", "images")
+_decor_images_dir = os.path.join(os.path.dirname(__file__), "decor_dataset", "data", "images")
 app.mount("/decor-images", StaticFiles(directory=_decor_images_dir), name="decor-images")
 app.mount("/decor_images", StaticFiles(directory=_decor_images_dir), name="decor-images-underscore")
+
+# Serve vendor portfolio uploads
+_uploads_dir = os.path.join(os.path.dirname(__file__), "static", "uploads")
+os.makedirs(_uploads_dir, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory=_uploads_dir), name="uploads")
 
 
 @app.get("/")
@@ -147,4 +155,4 @@ def health():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

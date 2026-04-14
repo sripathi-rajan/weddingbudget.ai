@@ -1,105 +1,46 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useWedding } from '../context/WeddingContext'
 import { scrollToNextSection } from '../utils/scrollToNext'
+import { API_BASE } from '../utils/config'
+import { ImageCard } from '../components/ImageCard'
 
 // ─── Option definitions ────────────────────────────────────────────────────────
 
 const WEDDING_TYPE_OPTIONS = [
-  { id: 'Hindu',     icon: '', label: 'Hindu', imageUrl: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#7C3AED' },
-  { id: 'Islam',     icon: '', label: 'Islamic', imageUrl: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
-  { id: 'Sikh',      icon: '', label: 'Sikh', imageUrl: '/sikh-wedding.png', fallbackColor: '#1D4ED8' },
+  { id: 'Hindu', icon: '', label: 'Hindu', imageUrl: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#7C3AED' },
+  { id: 'Islam', icon: '', label: 'Islamic', imageUrl: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+  { id: 'Sikh', icon: '', label: 'Sikh', imageUrl: '/sikh-wedding.png', fallbackColor: '#1D4ED8' },
   { id: 'Christian', icon: '', label: 'Christian', imageUrl: 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1E40AF' },
-  { id: 'Buddhist',  icon: '', label: 'Buddhist', imageUrl: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#B45309' },
-  { id: 'Jain',      icon: '', label: 'Jain', imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#065F46' },
-  { id: 'Generic',   icon: '', label: 'Mixed / Generic', imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#334155' },
+  { id: 'Buddhist', icon: '', label: 'Buddhist', imageUrl: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#B45309' },
+  { id: 'Jain', icon: '', label: 'Jain', imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#065F46' },
+  { id: 'Generic', icon: '', label: 'Mixed / Generic', imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#334155' },
 ]
 
 const BUDGET_STYLE_OPTIONS = [
   { id: 'Minimalist', icon: '', label: 'Minimalist', desc: 'Under ₹15L · Essential elegance', imageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#475569' },
-  { id: 'Modest',     icon: '', label: 'Modest',     desc: '₹15L – ₹40L · Beautiful balance', imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
-  { id: 'Luxury',     icon: '', label: 'Luxury',     desc: '₹1Cr+ · No compromises', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
+  { id: 'Modest', icon: '', label: 'Modest', desc: '₹15L – ₹40L · Beautiful balance', imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+  { id: 'Luxury', icon: '', label: 'Luxury', desc: '₹1Cr+ · No compromises', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
 ]
 
 const EVENT_OPTIONS = [
-  { id: 'Haldi',                icon: '', label: 'Haldi', imageUrl: 'https://images.unsplash.com/photo-1595407753234-0882f1e77954?w=1200&q=80', fallbackColor: '#B45309' },
-  { id: 'Mehendi',              icon: '', label: 'Mehendi', imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80', fallbackColor: '#166534' },
-  { id: 'Sangeet',              icon: '', label: 'Sangeet', imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1D4ED8' },
+  { id: 'Haldi', icon: '', label: 'Haldi', imageUrl: 'https://images.unsplash.com/photo-1595407753234-0882f1e77954?w=1200&q=80', fallbackColor: '#B45309' },
+  { id: 'Mehendi', icon: '', label: 'Mehendi', imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80', fallbackColor: '#166534' },
+  { id: 'Sangeet', icon: '', label: 'Sangeet', imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1D4ED8' },
   { id: 'Wedding Day Ceremony', icon: '', label: 'Ceremony', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&q=80', fallbackColor: '#7C2D12' },
-  { id: 'Reception',            icon: '', label: 'Reception', imageUrl: 'https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#9D174D' },
-  { id: 'Engagement',           icon: '', label: 'Engagement', imageUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+  { id: 'Reception', icon: '', label: 'Reception', imageUrl: 'https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#9D174D' },
+  { id: 'Engagement', icon: '', label: 'Engagement', imageUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
   { id: 'Pre Wedding Cocktail', icon: '', label: 'Cocktail', imageUrl: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#312E81' },
-  { id: 'Tilak',                icon: '', label: 'Tilak', isCustom: true, imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
-  { id: 'Grihapravesh',         icon: '', label: 'Grihapravesh', isCustom: true, imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#334155' },
+  { id: 'Tilak', icon: '', label: 'Tilak', isCustom: true, imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
+  { id: 'Grihapravesh', icon: '', label: 'Grihapravesh', isCustom: true, imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#334155' },
 ]
 
-const EVENT_EMOJIS = ['🎉','🎊','🕯️','🎵','💃','🥂','🌸','🌺','🎭','🪔','🎇','🥁','👑','🌙','⭐','🎆']
+const EVENT_EMOJIS = ['🎉', '🎊', '🕯️', '🎵', '💃', '🥂', '🌸', '🌺', '🎭', '🪔', '🎇', '🥁', '👑', '🌙', '⭐', '🎆']
 
 const FONT = { fontFamily: "'DM Sans', 'Inter', sans-serif" }
 
 // ─── Premium selection card ────────────────────────────────────────────────────
 
-function SelCard({ item, isSelected, onToggle, hasAnySelected, wide = false }) {
-  const [imgErr, setImgErr] = useState(false)
-  const cardBg = item.fallbackColor || '#334155'
-  return (
-    <div
-      onClick={() => onToggle(item.id)}
-      className={`sel-card${wide ? ' budget-style-card' : ''}${isSelected ? ' selected' : ''}${hasAnySelected && !isSelected ? ' dimmed' : ''}`}
-      style={{
-        border: isSelected ? '2px solid #C9A84C' : '2px solid #e5e7eb',
-        borderRadius: 12,
-        background: '#fff',
-        overflow: 'hidden',
-        textAlign: 'center',
-        userSelect: 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-        boxShadow: isSelected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-        transition: 'all 0.2s ease',
-        position: 'relative',
-      }}
-    >
-      <div className="sel-card-img-wrapper" style={{ position: 'relative', overflow: 'hidden', background: cardBg, lineHeight: 0 }}>
-        {!imgErr && item.imageUrl ? (
-          <img
-            src={item.imageUrl}
-            alt=""
-            style={{ width: '100%', height: wide ? 100 : 110, objectFit: 'cover', display: 'block' }}
-            onError={() => setImgErr(true)}
-          />
-        ) : (
-          <div style={{ height: wide ? 100 : 110, background: cardBg }} />
-        )}
-        <div className="check-badge-rose" style={{
-          position: 'absolute', top: 8, right: 8,
-          width: 22, height: 22, borderRadius: '50%',
-          background: '#C9A84C', color: '#111',
-          fontSize: 12, fontWeight: 800,
-          alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-          display: isSelected ? 'flex' : 'none',
-          animation: isSelected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none',
-          zIndex: 2
-        }}>✓</div>
-      </div>
-      <div style={{ padding: wide ? '14px 16px 16px' : '12px 12px 14px', ...FONT }}>
-        {item.icon ? (
-          <span className="sel-card-icon card-icon" style={{ fontSize: wide ? 22 : 24, display: 'block', marginBottom: 6 }}>{item.icon}</span>
-        ) : null}
-        <div className="card-label" style={{ fontWeight: 700, fontSize: wide ? 15 : 15, color: '#111' }}>
-          {item.label}
-        </div>
-        {item.desc && (
-          <div className="card-desc" style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-            {item.desc}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
 
 // ─── Section wrapper with staggered mount animation ───────────────────────────
 
@@ -113,7 +54,7 @@ function Section({ delay, children, style = {}, sectionId }) {
       style={{
         background: 'white', borderRadius: 18,
         border: '1.5px solid #EBEBEB',
-        padding: '24px 26px', marginBottom: 20,
+        padding: '20px', marginBottom: 20,
         boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         ...style
       }}
@@ -141,6 +82,26 @@ export default function Tab1Style() {
   const { wedding, update } = useWedding()
   const [newEventName, setNewEventName] = useState('')
   const [newEventEmoji, setNewEventEmoji] = useState(EVENT_EMOJIS[0])
+
+  const captureSoftLead = async () => {
+    if (!wedding.user_name || wedding.user_name.trim().length < 2) return
+    try {
+      await fetch(`${API_BASE}/admin/crm/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: wedding.user_name,
+          source: 'Wizard Start',
+          status: 'New',
+          wedding_date: wedding.wedding_date || '',
+          budget: 0,
+          notes: 'User started the wizard.'
+        })
+      })
+    } catch (err) {
+      // Non-fatal, just log
+    }
+  }
 
   // ── Date handler ─────────────────────────────────────────────────────────────
   const handleDateChange = (e) => {
@@ -215,11 +176,11 @@ export default function Tab1Style() {
   const selectedEvents = wedding.events || []
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', ...FONT }}>
+    <div style={{ maxWidth: 1300, margin: '0 auto', ...FONT }}>
 
       {/* ── Section 0: Name ── */}
       <Section delay={0} sectionId="user-name">
-        <SectionTitle> Hey! What's your name? <span style={{color: '#E01A22'}}>*</span></SectionTitle>
+        <SectionTitle> Hey! What's your name? <span style={{ color: '#E01A22' }}>*</span></SectionTitle>
         <input
           type="text"
           value={wedding.user_name || ''}
@@ -239,12 +200,15 @@ export default function Tab1Style() {
             transition: 'border-color 0.2s',
           }}
           onFocus={(e) => e.target.style.borderColor = '#C9A84C'}
-          onBlur={(e) => e.target.style.borderColor = '#EBEBEB'}
+          onBlur={(e) => {
+            e.target.style.borderColor = '#EBEBEB';
+            captureSoftLead();
+          }}
         />
       </Section>
 
       <Section delay={0} sectionId="wedding-date">
-        <SectionTitle> Wedding Date <span style={{color: '#E01A22'}}>*</span></SectionTitle>
+        <SectionTitle> Wedding Date <span style={{ color: '#E01A22' }}>*</span></SectionTitle>
         <input
           type="date"
           value={wedding.wedding_date || ''}
@@ -275,19 +239,21 @@ export default function Tab1Style() {
 
       {/* ── Section 2: Wedding Type ── */}
       <Section delay={0.08} sectionId="wedding-type" style={{ background: '#ffffff' }}>
-        <SectionTitle> Wedding Type <span style={{color: '#E01A22'}}>*</span></SectionTitle>
-        <div className="selection-grid wedding-type-grid" style={{
+        <SectionTitle> Wedding Type <span style={{ color: '#E01A22' }}>*</span></SectionTitle>
+        <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-          gap: 10
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 16
         }}>
           {WEDDING_TYPE_OPTIONS.map(opt => (
-            <SelCard
+            <ImageCard
               key={opt.id}
               item={opt}
-              isSelected={wedding.wedding_type === opt.id}
-              onToggle={handleTypeToggle}
+              selected={wedding.wedding_type === opt.id}
+              onClick={handleTypeToggle}
               hasAnySelected={!!wedding.wedding_type && wedding.wedding_type !== opt.id}
+              badge="TYPE"
+              actionLabel="Select Type"
             />
           ))}
         </div>
@@ -295,57 +261,137 @@ export default function Tab1Style() {
 
       {/* ── Section 3: Budget Style ── */}
       <Section delay={0.16} sectionId="budget-style">
-        <SectionTitle> Budget Style <span style={{color: '#E01A22'}}>*</span></SectionTitle>
-        <div className="budget-style-grid" style={{
+        <SectionTitle> Budget Style <span style={{ color: '#E01A22' }}>*</span></SectionTitle>
+        <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 12
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 16
         }}>
           {BUDGET_STYLE_OPTIONS.map(opt => (
-            <SelCard
+            <ImageCard
               key={opt.id}
               item={opt}
-              isSelected={wedding.budget_tier === opt.id}
-              onToggle={handleBudgetToggle}
+              selected={wedding.budget_tier === opt.id}
+              onClick={handleBudgetToggle}
               hasAnySelected={!!wedding.budget_tier && wedding.budget_tier !== opt.id}
-              wide
+              badge="TIER"
+              budget={opt.desc}
+              actionLabel="Choose Tier"
             />
           ))}
         </div>
+
+        {/* ── Manual Category Overrides ── */}
+        <AnimatePresence>
+          {wedding.budget_tier && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div style={{
+                marginTop: 20, padding: '20px', borderRadius: 14,
+                background: '#F9FAFB', border: '1.5px solid #EBEBEB',
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 18 }}></span> Set specific budgets for categories (Optional)
+                </div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 18 }}>
+                  Enter amounts in Rupees. Leave empty to use AI predictions for that category.
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: 16
+                }}>
+                  {[
+                    { key: 'Wedding Type Base', icon: '', label: 'Wedding Type Base' },
+                    { key: 'Events & Ceremonies', icon: '', label: 'Events & Ceremonies' },
+                    { key: 'Venue', icon: '', label: 'Venue Booking' },
+                    { key: 'Accommodation', icon: '', label: 'Accommodation' },
+                    { key: 'Food & Beverages', icon: '', label: 'Food & Beverages' },
+                    { key: 'Decor & Design', icon: '', label: 'Decor & Design' },
+                    { key: 'Artists & Entertainment', icon: '', label: 'Artists & Entertainment' },
+                    { key: 'Logistics & Transport', icon: '', label: 'Logistics & Transport' },
+                    { key: 'Sundries & Basics', icon: '', label: 'Sundries & Basics' },
+                  ].map(cat => (
+                    <div key={cat.key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>{cat.icon}</span> {cat.label}
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: '#9CA3AF', fontWeight: 600 }}>₹</span>
+                        <input
+                          type="number"
+                          placeholder="AI Estimated"
+                          value={wedding.manual_category_budgets?.[cat.key] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? '' : parseInt(e.target.value)
+                            update('manual_category_budgets', {
+                              ...(wedding.manual_category_budgets || {}),
+                              [cat.key]: val
+                            })
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px 10px 24px',
+                            border: '1.5px solid #EBEBEB',
+                            borderRadius: 10,
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: '#111',
+                            outline: 'none',
+                            background: '#fff',
+                            ...FONT
+                          }}
+                          onFocus={(e) => e.target.style.borderColor = '#C9A84C'}
+                          onBlur={(e) => e.target.style.borderColor = '#EBEBEB'}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Section>
 
       {/* ── Section 4: Events ── */}
       <Section delay={0.24} sectionId="events">
-        <SectionTitle> Events &amp; Ceremonies <span style={{color: '#E01A22'}}>*</span></SectionTitle>
+        <SectionTitle> Events &amp; Ceremonies <span style={{ color: '#E01A22' }}>*</span></SectionTitle>
         <div style={{ fontSize: 12, color: '#888', marginBottom: 14, ...FONT }}>
           Select all events you'll celebrate — multi-select
         </div>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-          gap: 10, marginBottom: 16
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 16, marginBottom: 16
         }}>
           {allEventOptions.map(opt => {
             const isSel = selectedEvents.includes(opt.id)
-            const isUserCustom = opt.isUserCustom
             return (
               <div key={opt.id} style={{ position: 'relative' }}>
-                <SelCard
+                <ImageCard
                   item={opt}
-                  isSelected={isSel}
-                  onToggle={handleEventToggle}
+                  selected={isSel}
+                  onClick={handleEventToggle}
                   hasAnySelected={false}
+                  badge="EVENT"
+                  actionLabel="Add Event"
                 />
-                {isUserCustom && (
+                {opt.isUserCustom && (
                   <button
                     onClick={(e) => { e.stopPropagation(); removeCustomEvent(opt.id) }}
                     style={{
                       position: 'absolute', top: -6, left: -6,
-                      width: 18, height: 18, borderRadius: '50%',
+                      width: 24, height: 24, borderRadius: '50%',
                       background: '#fee2e2', border: 'none', color: '#dc2626',
-                      fontSize: 10, fontWeight: 800, cursor: 'pointer',
+                      fontSize: 12, fontWeight: 800, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      lineHeight: 1, zIndex: 3
+                      lineHeight: 1, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                   >×</button>
                 )}
@@ -365,7 +411,7 @@ export default function Tab1Style() {
               marginBottom: 16, fontSize: 12, fontWeight: 700, color: '#B83A64'
             }}
           >
-             {selectedEvents.length} event{selectedEvents.length !== 1 ? 's' : ''} selected —{' '}
+            {selectedEvents.length} event{selectedEvents.length !== 1 ? 's' : ''} selected —{' '}
             {allEventOptions.filter(o => selectedEvents.includes(o.id)).slice(0, 4).map(o => o.icon).join(' ')}
             {selectedEvents.length > 4 && ` +${selectedEvents.length - 4} more`}
           </motion.div>

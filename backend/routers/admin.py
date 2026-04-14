@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, File, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
@@ -249,14 +249,14 @@ def update_contingency(data: ContingencySettings, db: Session = Depends(get_db))
     return {**data.model_dump(), "updated_at": datetime.utcnow().isoformat() + "Z"}
 
 
-# ── Decor Images ───────────────────────────────────────────────────────────────
+# ── Decor Images (Management) ──────────────────────────────────────────────────
 @router.get("/decor-images", dependencies=[Depends(require_admin)])
 def list_decor_images(db: Session = Depends(get_db)):
     images = db.execute(select(DecorImage).limit(50)).scalars().all()
     return {"images": [i.__dict__ for i in images], "total": len(images)}
 
 
-@router.post("/decor-images/label", dependencies=[Depends(require_admin)])
+@router.post("/admin-decor/label", dependencies=[Depends(require_admin)])
 def label_decor_image(body: DecorLabel):
     labels = _read_labels()
     labels[body.filename] = {
@@ -268,6 +268,30 @@ def label_decor_image(body: DecorLabel):
     }
     _write_labels(labels)
     return {"ok": True, "filename": body.filename}
+
+
+@router.post("/admin-decor/upload", dependencies=[Depends(require_admin)])
+async def upload_decor_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+    
+    # Save the file
+    os.makedirs(IMAGES_DIR, exist_ok=True)
+    file_path = os.path.join(IMAGES_DIR, file.filename)
+    
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
+    
+    # Check if already exists in DB
+    existing = db.execute(select(DecorImage).where(DecorImage.filename == file.filename)).scalar_one_or_none()
+    if not existing:
+        new_img = DecorImage(filename=file.filename, is_labelled=False)
+        db.add(new_img)
+        db.commit()
+        db.refresh(new_img)
+        return {"ok": True, "filename": file.filename, "status": "created"}
+    
+    return {"ok": True, "filename": file.filename, "status": "updated"}
 
 
 # ── Budget Rules ───────────────────────────────────────────────────────────────

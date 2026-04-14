@@ -2,7 +2,9 @@ import { useMemo, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useWedding, VENUE_TYPES, HOTEL_TIERS, ALL_EVENTS, INDIA_STATES_DISTRICTS, getMandapams, formatRupees } from '../context/WeddingContext'
 import { MultiImageSelector, SingleImageSelector } from '../components/ImageCard'
+import VibeSelector from '../components/VibeSelector'
 import { scrollToNextSection } from '../utils/scrollToNext'
+import { API_BASE } from '../utils/config'
 
 // Staggered section reveal
 const sectionStyle = (i) => ({
@@ -12,7 +14,7 @@ const sectionStyle = (i) => ({
 const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4fa', sky: '#8ecae6' }
 
 const COASTAL_LOCATIONS = {
-  "Goa": ["Panaji","Margao","Vasco da Gama","Mapusa","Ponda"],
+  "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda"],
   "Tamil Nadu": ["Chennai", "Thoothukudi", "Pondicherry"],
   "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode", "Alappuzha", "Kannur"],
   "Maharashtra": ["Mumbai", "Thane"],
@@ -24,17 +26,41 @@ const COASTAL_LOCATIONS = {
   "Andaman & Nicobar": ["Port Blair", "Havelock Island", "Neil Island"]
 }
 
-function StateCitySelector({ stateKey, districtKey, label, wedding, update, onDistrictSelect, filterBeach }) {
+const HERITAGE_LOCATIONS = {
+  "Rajasthan": ["Jaipur", "Udaipur", "Jodhpur", "Bikaner", "Jaisalmer", "Pushkar"],
+  "Madhya Pradesh": ["Gwalior", "Bhopal", "Indore"],
+  "Uttar Pradesh": ["Agra", "Lucknow", "Varanasi"],
+  "Gujarat": ["Ahmedabad", "Vadodara"]
+}
+
+const HILL_LOCATIONS = {
+  "Himachal Pradesh": ["Shimla", "Manali", "Dharamshala", "Kullu"],
+  "Uttarakhand": ["Dehradun", "Mussoorie", "Nainital", "Rishikesh"],
+  "Karnataka": ["Coorg"],
+  "Maharashtra": ["Lonavala", "Mahabaleshwar"],
+  "Tamil Nadu": ["Ooty", "Kodaikanal"],
+  "Kerala": ["Munnar"]
+}
+
+function StateCitySelector({ stateKey, districtKey, label, wedding, update, onDistrictSelect, filterType }) {
   let states = Object.keys(INDIA_STATES_DISTRICTS).sort()
-  
-  if (filterBeach) {
-    states = states.filter(s => COASTAL_LOCATIONS[s])
+
+  const filterMap = {
+    'Beach': COASTAL_LOCATIONS,
+    'Heritage': HERITAGE_LOCATIONS,
+    'Hill': HILL_LOCATIONS
   }
 
-  const districts = wedding[stateKey] 
-    ? (filterBeach && COASTAL_LOCATIONS[wedding[stateKey]] 
-        ? COASTAL_LOCATIONS[wedding[stateKey]] 
-        : (INDIA_STATES_DISTRICTS[wedding[stateKey]] || [])) 
+  const selectedFilter = filterMap[filterType]
+
+  if (selectedFilter) {
+    states = states.filter(s => selectedFilter[s])
+  }
+
+  const districts = wedding[stateKey]
+    ? (selectedFilter && selectedFilter[wedding[stateKey]]
+      ? selectedFilter[wedding[stateKey]]
+      : (INDIA_STATES_DISTRICTS[wedding[stateKey]] || []))
     : []
 
   return (
@@ -58,9 +84,74 @@ function StateCitySelector({ stateKey, districtKey, label, wedding, update, onDi
             if (districtKey === 'groom_district') update('groom_hometown', e.target.value)
             if (e.target.value) onDistrictSelect?.()
           }}>
-          <option value="">-- Select {filterBeach ? 'Beach Spot' : 'District'} --</option>
+          <option value="">-- Select {filterType ? `${filterType} Spot` : 'District'} --</option>
           {districts.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
+      </div>
+    </div>
+  )
+}
+
+function PremiumHotelCard({ tier, isSelected, onSelect }) {
+  return (
+    <div
+      className={`premium-venue-card ${isSelected ? 'selected' : ''}`}
+      onClick={() => onSelect(tier.id)}
+      style={{ minHeight: 'auto', padding: 16 }}
+    >
+      <div className="premium-image-wrapper" style={{ height: 160, borderRadius: 16, marginBottom: 14 }}>
+        <img src={tier.imageUrl} alt={tier.label} />
+      </div>
+      <div className="premium-card-body">
+        <div className="premium-card-top" style={{ marginBottom: 4 }}>
+          <div className="premium-venue-name" style={{ fontSize: 18 }}>{tier.label}</div>
+          {isSelected && <div className="badge-venue" style={{ background: 'var(--c-premium-btn)' }}>SELECTED</div>}
+        </div>
+        <div style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>{tier.desc}</div>
+
+        <div className="premium-info-box" style={{ background: '#fffafa', border: '1px solid #fce8ef', padding: '8px 12px' }}>
+          <div className="info-box-label" style={{ color: '#d4537e' }}>Avg Capacity</div>
+          <div className="info-box-val" style={{ fontSize: 14 }}>{tier.ppr} persons / room</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PremiumVenueCard({ venue, isSelected, onSelect }) {
+  const imageUrl = venue.imageUrl || `https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80`
+
+  return (
+    <div
+      className={`premium-venue-card ${isSelected ? 'selected' : ''}`}
+      onClick={() => onSelect(venue)}
+    >
+      <div className="premium-image-wrapper">
+        <img src={imageUrl} alt={venue.name} />
+      </div>
+      <div className="premium-card-body">
+        <div className="premium-card-top">
+          <div className="premium-venue-name">{venue.name}</div>
+          <div className="badge-venue">VENUE</div>
+        </div>
+        <div className="premium-venue-loc">
+          <span style={{ fontSize: 16 }}>📍</span> {venue.area}, {venue.city || 'Bangalore'}
+        </div>
+
+        <div className="premium-info-row">
+          <div className="premium-info-box">
+            <div className="info-box-label">Capacity</div>
+            <div className="info-box-val">{venue.capacity || '500'} pax</div>
+          </div>
+          <div className="premium-info-box">
+            <div className="info-box-label">Budget</div>
+            <div className="info-box-val">From {formatRupees(venue.cost_per_day || venue.price || 200000)}</div>
+          </div>
+        </div>
+
+        <button className="premium-action-btn">
+          View Price & Details <span>→</span>
+        </button>
       </div>
     </div>
   )
@@ -87,7 +178,7 @@ function MandapamCard({ venue, isSelected, onSelect, hasAnySelected }) {
         display: isSelected ? 'flex' : 'none',
         animation: isSelected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none',
         boxShadow: '0 2px 8px rgba(212,83,126,0.4)'
-      }}></div>
+      }}>✓</div>
       <div style={{ fontWeight: 700, fontSize: 14, color: isSelected ? '#B83A64' : C.primary, marginBottom: 4 }}>{venue.name}</div>
       <div style={{ fontSize: 12, color: C.blue, fontWeight: 500, marginBottom: 6 }}> {venue.area}</div>
       <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
@@ -101,6 +192,16 @@ function MandapamCard({ venue, isSelected, onSelect, hasAnySelected }) {
 
 export default function Tab2Venue() {
   const { wedding, update, updateMany } = useWedding()
+  const [dbVenues, setDbVenues] = useState([])
+
+  useEffect(() => {
+    fetch(`${API_BASE}/vendors/approved?category=Venue`)
+      .then(res => res.json())
+      .then(data => setDbVenues(data))
+      .catch(err => console.error("Error fetching db venues:", err))
+  }, [])
+
+  const [activeCityFilter, setActiveCityFilter] = useState('All')
   const [showMaps, setShowMaps] = useState(false)
   const [customVenue, setCustomVenue] = useState({ name: '', area: '', capacity: '', cost_per_day: '' })
   const [showCustomForm, setShowCustomForm] = useState(false)
@@ -132,26 +233,49 @@ export default function Tab2Venue() {
 
   return (
     <div>
-      {/* Venue Type */}
-      <div className="section-card" style={sectionStyle(0)} data-section="venue-type">
-        <div className="section-title"> Venue Type <span style={{color: '#E01A22'}}>*</span></div>
-        <SingleImageSelector items={VENUE_TYPES} selected={wedding.venue_type}
-          onChange={(v) => { update('venue_type', v); scrollToNextSection('venue-type', 420) }} />
+      {/* Vibe / Style Selection (Replica) */}
+      <div className="section-card" style={{ ...sectionStyle(0), background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }} data-section="vibe-selection">
+        <VibeSelector
+          selectedVibe={wedding.vibe}
+          onSelect={(vibeId) => {
+            update('vibe', vibeId)
+            // Map vibe to venue_type
+            let vType = ''
+            if (vibeId === 'beach') vType = 'Beach Venue'
+            if (vibeId === 'heritage') vType = 'Heritage Palace'
+            if (vibeId === 'hill') vType = 'Hill Station'
+            update('venue_type', vType)
+            scrollToNextSection('vibe-selection', 420)
+          }}
+        />
       </div>
+
+      {/* Other Venue Types (Dropdown/Grid if needed, but keeping it minimal) */}
+      {(!wedding.vibe || wedding.vibe === '') && (
+        <div className="section-card" style={sectionStyle(0.5)} data-section="venue-type">
+          <div className="section-title"> Or choose another Venue Type <span style={{ color: '#E01A22' }}>*</span></div>
+          <SingleImageSelector items={VENUE_TYPES.filter(v => !['Beach Venue', 'Heritage Palace', 'Hill Station'].includes(v.id))} selected={wedding.venue_type}
+            onChange={(v) => { update('venue_type', v); scrollToNextSection('venue-type', 420) }} />
+        </div>
+      )}
 
       {/* Wedding City */}
       <div className="section-card" style={sectionStyle(1)} data-section="wedding-city">
-        <div className="section-title"> Wedding City <span style={{color: '#E01A22'}}>*</span></div>
+        <div className="section-title"> Wedding City <span style={{ color: '#E01A22' }}>*</span></div>
         <StateCitySelector stateKey="wedding_state" districtKey="wedding_district"
           label="Wedding Location" wedding={wedding} update={update}
-          filterBeach={wedding.venue_type === 'Beach Venue'}
+          filterType={
+            wedding.vibe === 'beach' ? 'Beach' :
+              wedding.vibe === 'heritage' ? 'Heritage' :
+                wedding.vibe === 'hill' ? 'Hill' : null
+          }
           onDistrictSelect={() => scrollToNextSection('wedding-city', 420)} />
         {wedding.wedding_district && (
           <div style={{
             marginTop: 12, padding: '8px 14px', background: C.light,
             borderRadius: 10, fontSize: 13, color: C.primary, fontWeight: 600, display: 'inline-flex', gap: 8
           }}>
-             {wedding.wedding_district}, {wedding.wedding_state}
+            {wedding.wedding_district}, {wedding.wedding_state}
           </div>
         )}
       </div>
@@ -160,38 +284,64 @@ export default function Tab2Venue() {
       {wedding.wedding_district && wedding.venue_type && wedding.venue_type !== 'Home Intimate' && (
         <div className="section-card" data-section="venue-details-picker">
           {/* 1. Purpose-Driven Title */}
-          <div className="section-title"> 
+          <div className="section-title">
             {
-              (wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') 
+              (wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star')
                 ? `Select ${wedding.venue_type === 'Banquet Hall' ? 'Mandapam / Hall' : 'Hotel Venue'}`
                 : `${wedding.venue_type} Details`
-            } <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span>
+            } <span style={{ fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8 }}>(Optional)</span>
           </div>
 
           {/* 2. Catalog: Only shown for Hall/Hotel types */}
           {(wedding.venue_type === 'Banquet Hall' || wedding.venue_type === 'Hotel 3-5 Star') ? (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 13, color: '#4a7a94', marginBottom: 16 }}>
-                Popular venues in {wedding.wedding_district}. Verify prices directly with the management.
+            <div className="premium-catalog">
+              <div className="catalog-header">
+                <div className="catalog-title">venues</div>
+                <div className="city-filters">
+                  {['Bangalore', 'Hyderabad', 'Chennai', 'Mumbai', 'View all'].map(city => (
+                    <button
+                      key={city}
+                      className={`city-filter-btn ${activeCityFilter === city || (city === 'View all' && activeCityFilter === 'All') ? 'active' : ''}`}
+                      onClick={() => setActiveCityFilter(city === 'View all' ? 'All' : city)}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 16 }}>
-                {mandapams.map(vObj => (
-                  <MandapamCard key={vObj.id} venue={vObj}
-                    isSelected={wedding.mandapam_id === vObj.id}
-                    hasAnySelected={!!wedding.mandapam_id && wedding.mandapam_id !== vObj.id}
-                    onSelect={handleMandapamSelect} />
-                ))}
+
+              <div style={{ fontSize: 16, color: '#666', marginBottom: 32, maxWidth: 600, lineHeight: 1.5 }}>
+                Curated venues with standardized service, clear inclusions, and a team that knows the space end-to-end.
               </div>
-              
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize: 13, color: C.blue, fontWeight: 600, textDecoration: 'none', borderBottom: `1px dashed ${C.blue}` }}>
-                  🔍 Search more on Google Maps
-                </a>
-                <button onClick={() => setShowCustomForm(!showCustomForm)}
-                   style={{ fontSize: 13, color: '#7a5900', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}>
-                   {showCustomForm ? '✕ Hide Custom Entry' : '+ My venue isn\'t listed'}
-                </button>
+
+              <div className="premium-card-grid">
+                {/* Combine local mandapams and DB venues for a rich catalog */}
+                {[
+                  // Specific high-quality mock venues for Bangalore as seen in image
+                  { id: 'tridalam', name: 'Tridalam', area: 'Kanakapura Road', capacity: '1000', cost_per_day: 650000, city: 'Bangalore', imageUrl: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&q=80' },
+                  { id: 'ananda_farms', name: 'Ananda Farms', area: 'Hesaraghatta', capacity: '400', cost_per_day: 300000, city: 'Bangalore', imageUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80' },
+                  ...mandapams.map(m => ({ ...m, city: wedding.wedding_district })),
+                  ...dbVenues.map(v => ({ id: `db_${v.id}`, name: v.business, area: v.city, capacity: '500+', cost_per_day: 150000, city: v.city }))
+                ]
+                  .filter(v => activeCityFilter === 'All' || v.city?.toLowerCase().includes(activeCityFilter.toLowerCase()))
+                  .slice(0, 6) // Show top 6
+                  .map(v => (
+                    <PremiumVenueCard
+                      key={v.id}
+                      venue={v}
+                      isSelected={wedding.mandapam_id === v.id}
+                      onSelect={handleMandapamSelect}
+                    />
+                  ))}
+              </div>
+
+              <div style={{ marginTop: 40, textAlign: 'center' }}>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 15, color: '#111', fontWeight: 700, textDecoration: 'none', borderBottom: `2.5px solid var(--c-premium-btn)`, paddingBottom: 4 }}>
+                    Explore More Options on Google Maps
+                  </a>
+                </div>
               </div>
             </div>
           ) : (
@@ -250,8 +400,8 @@ export default function Tab2Venue() {
                 <div>
                   <div style={{ fontWeight: 700, color: '#065f46', fontSize: 14 }}>{wedding.mandapam_name || wedding.venue_type} — Cost Est.</div>
                   <div style={{ fontSize: 13, color: '#047857' }}>
-                    Days of Event: 
-                    <input type="number" min={1} value={wedding.num_days} 
+                    Days of Event:
+                    <input type="number" min={1} value={wedding.num_days}
                       onChange={e => update('num_days', parseInt(e.target.value) || 1)}
                       style={{ width: 45, border: 'none', background: 'white', borderRadius: 4, marginLeft: 8, textAlign: 'center', fontWeight: 700 }} />
                   </div>
@@ -270,7 +420,7 @@ export default function Tab2Venue() {
 
       {/* Guests & Capacity */}
       <div className="section-card" data-section="guest-count">
-        <div className="section-title"> Guests & Capacity <span style={{color: '#E01A22'}}>*</span></div>
+        <div className="section-title"> Guests & Capacity <span style={{ color: '#E01A22' }}>*</span></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 18, marginBottom: 20 }}>
           <div style={{ background: C.light, borderRadius: 12, padding: 16 }}>
             <label className="form-label" style={{ color: C.primary }}>Total Guests</label>
@@ -359,9 +509,21 @@ export default function Tab2Venue() {
 
       {/* Accommodation */}
       <div className="section-card" data-section="accommodation">
-        <div className="section-title"> Accommodation <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
-        <SingleImageSelector items={HOTEL_TIERS} selected={wedding.hotel_tier}
-          onChange={(v) => { update('hotel_tier', v); scrollToNextSection('accommodation', 420) }} showCost />
+        <div className="section-title"> Accommodation — Select Stay Tier <span style={{ fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8 }}>(Optional)</span></div>
+        <div style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>
+          Choose the stay experience for your outstation guests. Prices are estimated per night.
+        </div>
+
+        <div className="premium-card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          {HOTEL_TIERS.map(tier => (
+            <PremiumHotelCard
+              key={tier.id}
+              tier={tier}
+              isSelected={wedding.hotel_tier === tier.id}
+              onSelect={(val) => { update('hotel_tier', val); scrollToNextSection('accommodation', 420) }}
+            />
+          ))}
+        </div>
 
         {wedding.hotel_tier && (wedding.outstation_guests || 0) > 0 && (
           <div style={{
@@ -369,7 +531,7 @@ export default function Tab2Venue() {
             borderRadius: 12, border: `1.5px solid #6EE7B7`
           }}>
             <div style={{ fontWeight: 700, color: '#065F46', fontSize: 14, marginBottom: 10 }}>
-               Rooms Calculation
+              Rooms Calculation
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'end' }}>
               <div>
@@ -407,20 +569,20 @@ export default function Tab2Venue() {
 
       {/* Bride & Groom Hometowns */}
       <div className="section-card" data-section="hometowns">
-        <div className="section-title"> Bride &amp; Groom Hometowns <span style={{fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8}}>(Optional)</span></div>
+        <div className="section-title"> Bride &amp; Groom Hometowns <span style={{ fontSize: 13, color: '#888', fontWeight: 500, marginLeft: 8 }}>(Optional)</span></div>
         <div style={{ fontSize: 12, color: '#4a7a94', marginBottom: 16 }}>
           Used to calculate logistics & travel distance for transfers.
         </div>
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#b03060', marginBottom: 12 }}>
-             Bride's Hometown
+            Bride's Hometown
           </div>
           <StateCitySelector stateKey="bride_state" districtKey="bride_district"
             label="Bride" wedding={wedding} update={update} />
         </div>
         <div style={{ borderTop: `1.5px dashed ${C.sky}`, paddingTop: 20 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.primary, marginBottom: 12 }}>
-             Groom's Hometown
+            Groom's Hometown
           </div>
           <StateCitySelector stateKey="groom_state" districtKey="groom_district"
             label="Groom" wedding={wedding} update={update} />

@@ -11,8 +11,12 @@ import Tab4Food from './pages/Tab4Food'
 import Tab5Artists from './pages/Tab5Artists'
 import { Tab6Sundries, Tab7Logistics } from './pages/Tab6and7'
 import Tab8Budget from './pages/Tab8Budget'
+import TabChecklist from './pages/TabChecklist'
+import TabPayments from './pages/TabPayments'
 import AdminPage from './pages/AdminPage'
+import VendorRegister from './pages/VendorRegister'
 import GuideModal from './components/GuideModal'
+import { API_BASE } from './utils/config'
 
 const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4fa', sky: '#8ecae6', orange: '#fb8500' }
 
@@ -25,6 +29,8 @@ const TABS = [
   { id: 5, label: ' Sundries', short: 'Sundries' },
   { id: 6, label: ' Logistics', short: 'Logistics' },
   { id: 7, label: ' Budget', short: 'Budget' },
+  { id: 8, label: ' Checklist', short: 'Checklist' },
+  { id: 9, label: ' Payments', short: 'Payments' },
 ]
 
 // ─── Admin Panel Tab ───────────────────────────────────────────────────────────
@@ -235,7 +241,9 @@ const TAB_ICONS = {
   5: '🎁', // Sundries
   6: '🚗', // Logistics
   7: '💰', // Budget
-  8: '⚙️', // Admin
+  8: '📋', // Checklist
+  9: '💸', // Payments
+  10: '⚙️', // Admin
 }
 
 function TopNav({ activeTab, allTabs, isAdminRole, goTo, isMobile, onOpenGuide }) {
@@ -248,7 +256,11 @@ function TopNav({ activeTab, allTabs, isAdminRole, goTo, isMobile, onOpenGuide }
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const visibleTabs = allTabs.filter(tab => !tab.adminOnly || isAdminRole)
+  const visibleTabs = allTabs.filter(tab => {
+    if (tab.adminOnly && !isAdminRole) return false
+    if (isAdminRole && tab.id === 8) return false // Hide client-side checklist for admin
+    return true
+  })
 
   return (
     <nav className="top-nav" style={{
@@ -403,13 +415,167 @@ function TopNav({ activeTab, allTabs, isAdminRole, goTo, isMobile, onOpenGuide }
   )
 }
 
-function AppInner() {
+function CRMFab({ isMobile, C }) {
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [sent, setSent] = useState(false)
   const { wedding } = useWedding()
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' })
+
+  const submit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      await fetch(`${API_BASE}/admin/crm/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          wedding_date: wedding.wedding_date || '',
+          budget: wedding.total_estimate_mid || 0,
+          source: 'Consult Widget',
+          notes: formData.message
+        })
+      })
+      setSent(true)
+      setTimeout(() => { setOpen(false); setSent(false); }, 3000)
+    } catch (err) {
+      alert('Failed to send inquiry. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', bottom: isMobile ? 24 : 30, right: isMobile ? 16 : 30, zIndex: 1000 }}>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            style={{
+              background: 'white',
+              borderRadius: 24,
+              width: isMobile ? 'calc(100vw - 32px)' : 350,
+              padding: isMobile ? 20 : 28,
+              boxShadow: '0 20px 60px rgba(2,48,71,0.25)',
+              marginBottom: 12,
+              border: '1px solid #eef2f6',
+              fontFamily: "'DM Sans', sans-serif",
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ fontWeight: 800, fontSize: 18, color: C.primary }}>Consult an Expert</div>
+              <button
+                onClick={() => setOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888', padding: 4 }}
+              >×</button>
+            </div>
+
+            {sent ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 40, marginBottom: 15 }}>✨</div>
+                <div style={{ fontWeight: 700, color: '#059669' }}>Inquiry Sent!</div>
+                <div style={{ fontSize: 13, color: '#666', marginTop: 8 }}>A specialist will contact you shortly.</div>
+              </div>
+            ) : (
+              <form onSubmit={submit}>
+                <div style={{ marginBottom: 12 }}>
+                  <input
+                    required
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid #ddd', fontSize: 14 }}
+                  />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Email Address"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid #ddd', fontSize: 14 }}
+                  />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <input
+                    required
+                    placeholder="Phone Number"
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid #ddd', fontSize: 14 }}
+                  />
+                </div>
+                <div style={{ marginBottom: 18 }}>
+                  <textarea
+                    placeholder="How can we help you?"
+                    value={formData.message}
+                    onChange={e => setFormData({ ...formData, message: e.target.value })}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid #ddd', fontSize: 14, minHeight: 80 }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: 12,
+                    border: 'none',
+                    background: loading ? '#ccc' : `linear-gradient(135deg, ${C.primary}, ${C.blue})`,
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(33,158,188,0.3)'
+                  }}
+                >
+                  {loading ? 'Sending...' : 'Request Consultation'}
+                </button>
+              </form>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setOpen(!open)}
+        style={{
+          width: isMobile ? 56 : 60,
+          height: isMobile ? 56 : 60,
+          borderRadius: 30,
+          background: `linear-gradient(135deg, ${C.amber}, ${C.orange})`,
+          border: 'none',
+          boxShadow: '0 8px 25px rgba(251,133,0,0.4)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: isMobile ? 22 : 24,
+          color: 'white',
+          float: 'right'
+        }}
+      >
+        {open ? '×' : '💬'}
+      </motion.button>
+    </div>
+  )
+}
+
+function AppInner() {
+  const { wedding, update } = useWedding()
   const [activeTab, setActiveTab] = useState(0)
   const [validationErrors, setValidationErrors] = useState([])
-  const [showAdmin, setShowAdmin] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(true)
   const [isAdminRole, setIsAdminRole] = useState(false)
+  const [currentView, setCurrentView] = useState('landing') // landing, planner, admin, vendor-register
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
   const [guideOpen, setGuideOpen] = useState(false)
   const topRef = useRef(null)
@@ -422,12 +588,13 @@ function AppInner() {
 
   const pages = [
     <Tab1Style />, <Tab2Venue />, <Tab3Decor />, <Tab4Food />,
-    <Tab5Artists />, <Tab6Sundries />, <Tab7Logistics />, <Tab8Budget />, <AdminTab />
+    <Tab5Artists />, <Tab6Sundries />, <Tab7Logistics />, <Tab8Budget />,
+    <TabChecklist />, <TabPayments />, <AdminTab />
   ]
 
   const allTabs = [
     ...TABS,
-    { id: 8, label: ' Admin', short: 'Admin', adminOnly: true }
+    { id: 10, label: ' Admin', short: 'Admin', adminOnly: true }
   ]
 
   const goTo = (tabIndex) => {
@@ -436,15 +603,62 @@ function AppInner() {
     setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
+  const handleFinalize = async () => {
+    if (wedding.finalised) return
+
+    // Attempt to finalize with backend
+    try {
+      // Basic check — needs a budget calculated to finalize
+      if (!wedding.budget_result) {
+        alert('Please visit the Budget tab to generate your plan before finalising.')
+        goTo(7) // Go to Budget tab
+        return
+      }
+
+      console.log('Finalising to:', `${API_BASE}/budget/finalise`)
+      const res = await fetch(`${API_BASE}/budget/finalise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_name: wedding.user_name || 'Anonymous User',
+          total: wedding.budget_result.total,
+          created_at: new Date().toISOString(),
+          wedding_profile: wedding
+        })
+      })
+
+      if (res.ok) {
+        const result = await res.json()
+        if (result.success) {
+          update('finalised', true)
+          alert('🎉 Wedding plan finalised successfully! You can now track your payments and tasks.')
+        } else {
+          alert('Finalisation error: ' + (result.error || 'Unknown error'))
+        }
+      } else {
+        const errText = await res.text()
+        alert(`Finalisation failed (Status ${res.status}): ${errText.substring(0, 100)}`)
+      }
+    } catch (err) {
+      console.error('Finalize Fetch Error:', err)
+      alert('Failed to connect to the server for finalisation. Error: ' + err.message)
+    }
+  }
+
   // Listen for sticky "Next" buttons inside tab components
   useEffect(() => {
     const nextListener = () => handleNext()
     const goToListener = (e) => goTo(e.detail)
+    const finalizeListener = () => handleFinalize()
+
     window.addEventListener('weddingNextTab', nextListener)
     window.addEventListener('weddingGoToTab', goToListener)
+    window.addEventListener('weddingFinalize', finalizeListener)
+
     return () => {
       window.removeEventListener('weddingNextTab', nextListener)
       window.removeEventListener('weddingGoToTab', goToListener)
+      window.removeEventListener('weddingFinalize', finalizeListener)
     }
   }, [activeTab, wedding])
 
@@ -456,21 +670,27 @@ function AppInner() {
       return
     }
     setValidationErrors([])
-    goTo(Math.min(TABS.length - 1, activeTab + 1))
+    const totalUserTabs = allTabs.filter(t => !t.adminOnly).length
+    goTo(Math.min(totalUserTabs - 1, activeTab + 1))
   }
 
-  if (showAdmin) return <AdminPage onClose={() => { setShowAdmin(false); setShowWelcome(true) }} />
+  if (currentView === 'admin') return <AdminPage onClose={() => { setCurrentView('landing') }} />
+  if (currentView === 'vendor-register') return <VendorRegister onBack={() => setCurrentView('landing')} />
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ParticleField />
-      {showWelcome && (
+      {currentView === 'landing' && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, overflowY: 'auto' }}>
-          <LandingPage onOpenGuide={() => setGuideOpen(true)} onEnter={(role) => {
-            setIsAdminRole(role === 'admin')
-            setShowWelcome(false)
-            if (role === 'admin') setShowAdmin(true)
-          }} />
+          <LandingPage
+            onOpenGuide={() => setGuideOpen(true)}
+            onEnter={(role) => {
+              setIsAdminRole(role === 'admin')
+              if (role === 'admin') setCurrentView('admin')
+              else setCurrentView('planner')
+            }}
+            onVendorRegister={() => setCurrentView('vendor-register')}
+          />
         </div>
       )}
       <TopNav
@@ -485,12 +705,12 @@ function AppInner() {
       <div style={{ width: '100%', height: 3, background: '#EBEBEB' }}>
         <div style={{
           height: '100%', background: '#D4537E',
-          width: `${(activeTab / 7) * 100}%`,
+          width: `${(activeTab / (allTabs.filter(t => !t.adminOnly || isAdminRole).length - 1)) * 100}%`,
           transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
         }} />
       </div>
 
-      <div ref={topRef} style={{ maxWidth: 1100, margin: '0 auto', width: '100%', padding: '24px 20px', flex: 1, paddingBottom: 24 }}>
+      <div ref={topRef} style={{ maxWidth: 1300, margin: '0 auto', width: '100%', padding: '24px 12px', flex: 1, paddingBottom: 24 }}>
         {/* Progress dots */}
         <div className="progress-dots" style={{ display: 'flex', gap: 5, marginBottom: 24, justifyContent: 'center' }}>
           {allTabs.filter(tab => !tab.adminOnly || isAdminRole).map(tab => (
@@ -544,17 +764,22 @@ function AppInner() {
           <div style={{ fontSize: 13, color: '#4a7a94', fontWeight: 600, order: isMobile ? -1 : 0, width: isMobile ? '100%' : 'auto', textAlign: 'center' }}>
             Step {activeTab + 1} of {allTabs.filter(t => !t.adminOnly || isAdminRole).length}
           </div>
-          {activeTab < 7 ? (
+          {activeTab < allTabs.filter(t => !t.adminOnly).length - 1 ? (
             <button key="next-btn" onClick={handleNext} className="btn-primary" style={{ flex: isMobile ? 1 : 'unset' }}>Next →</button>
           ) : (
             <button key="finalise-btn" onClick={() => window.dispatchEvent(new CustomEvent('weddingFinalize'))}
-              className="btn-primary" style={{ background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', flex: isMobile ? 1 : 'unset' }}>
-              Finalise
+              className="btn-primary" style={{
+                background: wedding.finalised ? '#059669' : 'linear-gradient(135deg,#059669,#047857)',
+                color: 'white', flex: isMobile ? 1 : 'unset',
+                opacity: wedding.finalised ? 0.8 : 1
+              }}>
+              {wedding.finalised ? 'Finalised ✓' : 'Finalise'}
             </button>
           )}
         </div>
       </div>
 
+      {currentView === 'planner' && <CRMFab isMobile={isMobile} C={C} wedding={wedding} />}
     </div>
   )
 }
